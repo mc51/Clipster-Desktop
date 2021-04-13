@@ -1,0 +1,7 @@
+AllowShortFunctionsOnASingleLine: None
+BreakBeforeBraces: Attach
+PointerAlignment: Left
+SpacesInParentheses: true
+IndentWidth: 4
+TabWidth: 4
+UseTab: ForIndentation

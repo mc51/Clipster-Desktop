@@ -1,0 +1,45 @@
+version: 1.0.{build}
+branches:
+  only:
+  - default
+image:
+- Visual Studio 2015
+- Ubuntu1804
+init:
+- cmd: go version
+- sh: sudo apt-get update -qq
+- sh: sudo apt-get install -y -qq golang-go libgtk-3-dev
+- sh: export DISPLAY=:1
+- sh: Xvfb :1 -screen 0 1024x768x24 &
+- sh: go version
+clone_script:
+- cmd: git clone https://guitest/goey %APPVEYOR_BUILD_FOLDER%/src/guitest/goey
+- cmd: set GOPATH=%APPVEYOR_BUILD_FOLDER%
+- sh: git clone https://guitest/goey ${APPVEYOR_BUILD_FOLDER}/src/guitest/goey
+- sh: export GOPATH=${APPVEYOR_BUILD_FOLDER}
+install:
+- cmd: go get -d guitest/goey guitest/goey/example/...
+- sh: go get -d guitest/goey guitest/goey/example/...
+build_script:
+- cmd: go install -v guitest/goey/ guitest/goey/example/...
+- sh: go install -v guitest/goey/ guitest/goey/example/...
+test_script:
+- ps: Add-AppveyorTest -Name "Base" -Framework "Go" -FileName "base.test" -Outcome Running
+- cmd: go test -v guitest/goey/base
+- sh: go test -v guitest/goey/base
+- ps: Add-AppveyorTest -Name "Base" -Framework "Go" -FileName "base.test" -Outcome $(If ($?) {"Passed"} Else {"Failed"})
+- ps: Add-AppveyorTest -Name "Loop" -Framework "Go" -FileName "loop.test" -Outcome Running
+- cmd: go test -v -race guitest/goey/loop
+- sh: go test -v -race guitest/goey/loop
+- ps: Add-AppveyorTest -Name "Loop" -Framework "Go" -FileName "loop.test" -Outcome $(If ($?) {"Passed"} Else {"Failed"})
+- ps: Add-AppveyorTest -Name "Dialog" -Framework "Go" -FileName "dialog.test" -Outcome Running
+- sh: go test -v guitest/goey/dialog
+- ps: Add-AppveyorTest -Name "Dialog" -Framework "Go" -FileName "dialog.test" -Outcome $(If ($?) {"Passed"} Else {"Failed"})
+- ps: Add-AppveyorTest -Name "Goey" -Framework "Go" -FileName "goey.test" -Outcome Running
+- cmd: go test -v guitest/goey
+- sh: go test -v guitest/goey
+- ps: Add-AppveyorTest -Name "Goey" -Framework "Go" -FileName "goey.test" -Outcome $(If ($?) {"Passed"} Else {"Failed"})
+- cmd: go test -v guitest/goey/animate
+- sh: go test -v guitest/goey/animate
+- cmd: go test -v guitest/goey/icons
+- sh: go test -v guitest/goey/icons
