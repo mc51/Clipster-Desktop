@@ -2,15 +2,9 @@
 package clipster
 
 import (
-	"encoding/base64"
-	"errors"
-	"fmt"
-	"image"
 	"log"
 	"os"
-	"regexp"
 	"runtime"
-	"strings"
 
 	"guitest/goey"
 	"guitest/goey/base"
@@ -30,45 +24,47 @@ func ShowNotification(title string, body string) {
 	}
 }
 
-func StartGuiInBackground() {
+func StartGUIInBackground() {
 	// For GTK
-	fmt.Println("StartGui")
+	log.Println("StartGui")
 	os.Setenv("GOEY_SIZE", "300x300") // MainWindows size
 	err := loop.Run(createHiddenWindow)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %s\n", err)
+		log.Fatalln("Error:", err)
 	}
-	log.Println("StartGuiInBackground")
+	log.Println("End StartGUIInBackground")
 }
 
-func StartGuiInForeground() {
+func StartGUIInForeground() {
 	// For Windows
-	fmt.Println("StartGui")
+	log.Println("StartGui")
 	os.Setenv("GOEY_SIZE", "300x300") // MainWindows size
-	err := loop.Run(CreateMainWindow)
+	err := loop.Run(GUIAskForCredentials)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %s\n", err)
+		log.Fatalln("Error:", err)
 	}
+	log.Println("End StartGUIInForeground")
 }
 
 func createHiddenWindow() error {
 	// Hidden Window Keeps GTK main loop running
-	fmt.Println("createHiddenWindow")
+	log.Println("createHiddenWindow")
 	// this need adapted goey function without gtk call to .show()
 	_, err := goey.NewHiddenWindow("", nil)
 	if err != nil {
+		log.Fatalln("Error:", err)
 		return err
 	}
 	return nil
 }
 
-func CreateMainWindow() error {
-	fmt.Println("CreateMainWindow")
-	w, err := goey.NewWindow("Clipster – Enter Credentials", renderWindow())
+func GUIAskForCredentials() error {
+	log.Println("GUIAskForCredentials")
+	w, err := goey.NewWindow("Clipster – Enter Credentials", renderCredsWindow())
 	if err != nil {
 		return err
 	}
-	icon, err := ReadIcon()
+	icon, err := ReadIconAsImageFromFile(ICON_FILENAME)
 	if err != nil {
 		return err
 	}
@@ -80,76 +76,46 @@ func CreateMainWindow() error {
 
 func ShowEditCredsGUI() {
 	if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
-		loop.Do(CreateMainWindow)
+		loop.Do(GUIAskForCredentials)
 	} else if runtime.GOOS == "windows" {
-		StartGuiInForeground()
+		StartGUIInForeground()
 	}
 }
 
-func ReadIcon() (image.Image, error) {
-	icon_b64 := ReadIconAsB64FromFile(ICON_FILENAME)
-	reader := base64.NewDecoder(base64.StdEncoding, strings.NewReader(icon_b64))
-	m, _, err := image.Decode(reader)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %s\n", err)
-	}
-	return m, err
-}
+// func updateWindow() {
+// 	err := mainWindow.SetChild(renderCredsWindow())
+// 	if err != nil {
+// 		log.Println("Error:", err)
+// 	}
+// }
 
-func updateWindow() {
-	err := mainWindow.SetChild(renderWindow())
+func login_workflow(host string, user string, pw string) {
+	// login_workflow check for completeness of creds, creates hash from them
+	// uses hash to authemtocate against API endpoint and displays
+	// a Message box with the result
+	host, user, pw, err := AreCredsComplete(host, user, pw)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %s\n", err)
-	}
-}
-
-func login(host string, user string, pw string) {
-	host, user, pw, err := areCredsComplete(host, user, pw)
-	if err != nil {
+		mainWindow.Message(err.Error()).WithError().Show()
 		log.Println("Error:", err)
+		return
 	}
-	fmt.Println("Login:", host, user, pw)
-	Login(host, user, pw)
+	log.Println("Login:", host, user, pw)
+
+	hash_login := GetLoginHashFromPw(user, pw)
+	// if err := APILogin(host, user, hash_login); err != nil {
+	// 	log.Println("Error:", err)
+	// 	mainWindow.Message(err.Error()).WithError().Show()
+	// 	return
+	// }
+	hash_msg := GetMsgHashFromPw(user, pw)
+	c := Config{host, user, hash_login, hash_msg, true}
+	WriteConfigFile(c)
+	log.Println("Ok: login workflow completed")
+	mainWindow.Message("Login successfull").WithInfo().Show()
+
 }
 
-func register(host string, user string, pw string) {
-	host, user, pw, err := areCredsComplete(host, user, pw)
-	if err != nil {
-
-	} else {
-		fmt.Fprintf(os.Stderr, "error: %s\n", err)
-	}
-	fmt.Println("Register:", host, user, pw)
-}
-
-func areCredsComplete(host string, user string, pw string) (string, string, string, error) {
-	// Check if entered credentials are complete
-	var err error = nil
-	host = strings.TrimSpace(host)
-	user = strings.TrimSpace(user)
-	pw = strings.TrimSpace(pw)
-
-	if host == "" {
-		host = HOST_DEFAULT
-	}
-	if !isHostnameValid(host) {
-		mainWindow.Message("Please enter a valid hostname").WithError().Show()
-	} else if user == "" {
-		mainWindow.Message("Please enter an username").WithError().Show()
-		err = errors.New("missing username")
-	} else if pw == "" {
-		mainWindow.Message("Please enter a password").WithError().Show()
-		err = errors.New("missing username")
-	}
-	return host, user, pw, err
-}
-
-func isHostnameValid(host string) bool {
-	match, _ := regexp.Match(RE_HOSTNAME, []byte(host))
-	return match
-}
-
-func renderWindow() base.Widget {
+func renderCredsWindow() base.Widget {
 	var user, pw, host string
 	widget :=
 		&goey.HBox{
@@ -157,32 +123,32 @@ func renderWindow() base.Widget {
 				&goey.VBox{
 					Children: []base.Widget{
 						&goey.Label{Text: "Server address:"},
-						&goey.TextInput{Value: host, Placeholder: "https://clipster.cc",
+						&goey.TextInput{Value: host, Placeholder: HOST_DEFAULT,
 							OnChange: func(v string) {
 								host = v
-								println("server input ", v)
+								log.Println("server input ", v)
 							}},
 						&goey.Checkbox{Text: "Disable SSL cert check",
-							OnChange: func(v bool) { println("check box input: ", v) }},
+							OnChange: func(v bool) { log.Println("check box input: ", v) }},
 						&goey.Label{Text: "Username:"},
 						&goey.TextInput{Value: user, Placeholder: "Enter username",
 							OnChange: func(v string) {
 								user = v
-								println("username input ", v)
+								log.Println("username input ", v)
 							}},
 						&goey.Label{Text: "Password:"},
 						&goey.TextInput{Value: pw, Placeholder: "Enter password", Password: true,
 							OnChange: func(v string) {
 								pw = v
-								println("password input ", v)
+								log.Println("password input ", v)
 							}},
 						&goey.HBox{
 							Children: []base.Widget{
 								&goey.Button{Text: "Login", OnClick: func() {
-									login(host, user, pw)
+									login_workflow(host, user, pw)
 								}},
 								&goey.Button{Text: "Register", OnClick: func() {
-									register(host, user, pw)
+									Register(host, user, pw)
 								}},
 								&goey.Button{Text: "Cancel", OnClick: func() { mainWindow.Close() }}},
 							AlignMain: goey.MainStart,

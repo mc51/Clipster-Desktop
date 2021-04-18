@@ -17,24 +17,36 @@ func main() {
 	go startGui(finish)
 	go func() {
 		for loop.IsRunning == 0 {
-			time.Sleep(1 * time.Second)
+			time.Sleep(200 * time.Millisecond)
 			log.Println("Waiting for GTK loop to start...")
 		}
-		log.Printf("GTK running...")
-		clipster.ShowEditCredsGUI()
+		log.Printf("GTK loop started... Checking for config")
+		ok, err := clipster.OpenConfigFile()
+		if !ok {
+			log.Println("Error:", err)
+			clipster.ShowEditCredsGUI()
+			log.Println("After Show Gui")
+		} else {
+			creds, _ := clipster.LoadConfigFromFile()
+			log.Printf("%+v", creds)
+		}
 	}()
 	<-finish
 }
 
 func startGui(finish chan bool) {
+	// startGui starts systray and GUI loops. It deals with platform idiosyncraties
 	if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
+		// On linux and macos all GUIs must run on main thead. We use GTK for tray and goey
+		// Both must be run in same loop, locked to main thread
 		tray.Register(onReady, onExit)
-		clipster.StartGuiInBackground()
+		// Start gtk loop without displaying window (just tray)
+		clipster.StartGUIInBackground()
 	} else if runtime.GOOS == "windows" {
-		// Start systray with GTK loop and GUI
+		// On Win GUIs can run on non-main thread. tray gets own thread
 		tray.Run(onReady, onExit)
 	}
-	finish <- true
+	close(finish)
 }
 
 func onReady() {
@@ -42,7 +54,6 @@ func onReady() {
 	tray.SetIcon(clipster.ReadIconAsBytesFromFile(clipster.ICON_FILENAME))
 	tray.SetTitle("Clipster")
 	tray.SetTooltip("Clipster")
-
 	// We can manipulate the tray in other goroutines
 	go func() {
 		mLastClip := tray.AddMenuItem("Get last Clip", "Get last Clip")
@@ -52,7 +63,6 @@ func onReady() {
 		mEditCreds := tray.AddMenuItem("Edit Credentials", "Edit Credentials")
 		tray.AddSeparator()
 		mQuit := tray.AddMenuItem("Quit", "Quit the whole app")
-
 		// Read from Channel: Called as callback from C
 		for {
 			select {
@@ -72,7 +82,6 @@ func onReady() {
 			}
 		}
 	}()
-
 }
 
 func onExit() {
