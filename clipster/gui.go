@@ -90,9 +90,11 @@ func ShowEditCredsGUI() {
 // }
 
 func login_workflow(host string, user string, pw string) {
-	// login_workflow check for completeness of creds, creates hash from them
-	// uses hash to authemtocate against API endpoint and displays
-	// a Message box with the result
+	// login_workflow check for completeness of creds
+	// creates hash from them
+	// uses hash to authemtocate against API endpoint
+	// displays Message box with the result
+	// on success saves credentials to config
 	host, user, pw, err := AreCredsComplete(host, user, pw)
 	if err != nil {
 		mainWindow.Message(err.Error()).WithError().Show()
@@ -102,17 +104,19 @@ func login_workflow(host string, user string, pw string) {
 	log.Println("Login:", host, user, pw)
 
 	hash_login := GetLoginHashFromPw(user, pw)
-	// if err := APILogin(host, user, hash_login); err != nil {
-	// 	log.Println("Error:", err)
-	// 	mainWindow.Message(err.Error()).WithError().Show()
-	// 	return
-	// }
+	// TODO: This is blocking. Goroutine?
+	if err := APILogin(host, user, hash_login); err != nil {
+		log.Println("Error:", err)
+		mainWindow.Message(err.Error()).WithError().Show()
+		return
+	}
 	hash_msg := GetMsgHashFromPw(user, pw)
+	// TODO: get checkbox value
 	c := Config{host, user, hash_login, hash_msg, true}
 	WriteConfigFile(c)
 	log.Println("Ok: login workflow completed")
-	mainWindow.Message("Login successfull").WithInfo().Show()
-
+	mainWindow.Message("Login successfull\nCredentials saved to config:\n" + CONFIG_FILEPATH).WithInfo().Show()
+	mainWindow.Close()
 }
 
 func renderCredsWindow() base.Widget {

@@ -10,6 +10,7 @@ import (
 )
 
 var CONFIG_PATHS = make([]string, 4)
+var CONFIG_FILEPATH string
 
 const CONFIG_FILENAME = "config.yaml"
 const CONFIG_TYPE = "yaml"
@@ -37,7 +38,7 @@ type Config struct {
 }
 
 func init() {
-	InitConfigPaths()
+	initConfigPaths()
 }
 
 func OpenConfigFile() (bool, error) {
@@ -78,14 +79,15 @@ func WriteConfigFile(c Config) {
 		log.Printf("Field: %s\tValue: %v\n", typeOfS.Field(i).Name, v.Field(i).Interface())
 		viper.Set(typeOfS.Field(i).Name, v.Field(i).Interface())
 	}
-	if err := viper.WriteConfigAs(CONFIG_PATHS[0] + string(os.PathSeparator) + CONFIG_FILENAME); err != nil {
+	if err := viper.WriteConfigAs(CONFIG_FILEPATH); err != nil {
 		log.Fatalln("Error:", err)
 	}
 }
 
-func InitConfigPaths() {
-	// InitConfigPaths checks if at least one config folder exists, otherwise creates it
-	log.Printf("InitConfigPaths")
+func initConfigPaths() {
+	// initConfigPaths checks if at least one config folder exists, otherwise creates it
+	// it sets CONFIG_FILEPATH to this path
+	log.Printf("initConfigPaths")
 	homedir, err := os.UserHomeDir()
 	if err != nil {
 		log.Fatalln("Error:", err)
@@ -98,6 +100,7 @@ func InitConfigPaths() {
 	for _, path := range CONFIG_PATHS {
 		if fileExists(path) {
 			log.Println("Config file folder exists", path)
+			CONFIG_FILEPATH = path + string(os.PathSeparator) + CONFIG_FILENAME
 			return
 		}
 	}
@@ -108,6 +111,7 @@ func InitConfigPaths() {
 		log.Fatal(err)
 		return
 	}
+	CONFIG_FILEPATH = CONFIG_PATHS[0] + string(os.PathSeparator) + CONFIG_FILENAME
 	log.Println("Created config file folder", CONFIG_PATHS[0])
 }
 
