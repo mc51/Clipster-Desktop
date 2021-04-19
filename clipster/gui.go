@@ -89,7 +89,7 @@ func ShowEditCredsGUI() {
 // 	}
 // }
 
-func register_flow(host string, user string, pw string) {
+func register_flow(host string, user string, pw string, ssl_disable bool) {
 	// register_flow check for completeness of creds
 	// creates hash from them
 	// uses hash to register at API endpoint
@@ -105,7 +105,7 @@ func register_flow(host string, user string, pw string) {
 
 	hash_login := GetLoginHashFromPw(user, pw)
 	// TODO: This is blocking. Goroutine?
-	if err := APIRegister(host, user, hash_login); err != nil {
+	if err := APIRegister(host, user, hash_login, ssl_disable); err != nil {
 		log.Println("Error:", err)
 		mainWindow.Message(err.Error()).WithError().Show()
 		return
@@ -119,7 +119,7 @@ func register_flow(host string, user string, pw string) {
 	mainWindow.Close()
 }
 
-func login_flow(host string, user string, pw string) {
+func login_flow(host string, user string, pw string, ssl_disable bool) {
 	// login_flow check for completeness of creds
 	// creates hash from them
 	// uses hash to authemtocate against API endpoint
@@ -135,7 +135,7 @@ func login_flow(host string, user string, pw string) {
 
 	hash_login := GetLoginHashFromPw(user, pw)
 	// TODO: This is blocking. Goroutine?
-	if err := APILogin(host, user, hash_login); err != nil {
+	if err := APILogin(host, user, hash_login, ssl_disable); err != nil {
 		log.Println("Error:", err)
 		mainWindow.Message(err.Error()).WithError().Show()
 		return
@@ -151,6 +151,7 @@ func login_flow(host string, user string, pw string) {
 
 func renderCredsWindow() base.Widget {
 	var user, pw, host string
+	var ssl_disable bool
 	widget :=
 		&goey.HBox{
 			Children: []base.Widget{
@@ -163,7 +164,10 @@ func renderCredsWindow() base.Widget {
 								log.Println("server input ", v)
 							}},
 						&goey.Checkbox{Text: "Disable SSL cert check",
-							OnChange: func(v bool) { log.Println("check box input: ", v) }},
+							OnChange: func(v bool) {
+								ssl_disable = v
+								log.Println("check box input: ", v)
+							}},
 						&goey.Label{Text: "Username:"},
 						&goey.TextInput{Value: user, Placeholder: "Enter username",
 							OnChange: func(v string) {
@@ -179,10 +183,10 @@ func renderCredsWindow() base.Widget {
 						&goey.HBox{
 							Children: []base.Widget{
 								&goey.Button{Text: "Login", OnClick: func() {
-									login_flow(host, user, pw)
+									login_flow(host, user, pw, ssl_disable)
 								}},
 								&goey.Button{Text: "Register", OnClick: func() {
-									register_flow(host, user, pw)
+									register_flow(host, user, pw, ssl_disable)
 								}},
 								&goey.Button{Text: "Cancel", OnClick: func() { mainWindow.Close() }}},
 							AlignMain: goey.MainStart,

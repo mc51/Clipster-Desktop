@@ -2,6 +2,7 @@ package clipster
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -35,7 +36,7 @@ func Register(host string, user string, pw string) {
 	log.Println("Register:", host, user, pw)
 }
 
-func APIRegister(host string, user string, hash_login string) error {
+func APIRegister(host string, user string, hash_login string, ssl_disable bool) error {
 	// APIRegister registers new account at API endpoint using hash created from creds
 	url := host + API_URI_REGISTER
 	payload, err := json.Marshal(map[string]string{
@@ -55,7 +56,10 @@ func APIRegister(host string, user string, hash_login string) error {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
 
-	client := http.Client{Timeout: API_TIMEOUT * time.Second}
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: ssl_disable},
+	}
+	client := http.Client{Timeout: API_TIMEOUT * time.Second, Transport: tr}
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Println("Error:", err)
@@ -77,7 +81,7 @@ func APIRegister(host string, user string, hash_login string) error {
 	}
 }
 
-func APILogin(host string, user string, hash_login string) error {
+func APILogin(host string, user string, hash_login string, ssl_disable bool) error {
 	// APILogin authenticates against API endpoint using hash created from creds
 	url := host + API_URI_LOGIN
 	req, err := http.NewRequest(http.MethodGet, url, nil)
@@ -89,7 +93,10 @@ func APILogin(host string, user string, hash_login string) error {
 	req.Header.Set("Accept", "application/json")
 	req.SetBasicAuth("m", hash_login)
 
-	client := http.Client{Timeout: API_TIMEOUT * time.Second}
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: ssl_disable},
+	}
+	client := http.Client{Timeout: API_TIMEOUT * time.Second, Transport: tr}
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Println("Error:", err)
