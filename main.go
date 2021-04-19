@@ -21,15 +21,17 @@ func main() {
 			log.Println("Waiting for GTK loop to start...")
 		}
 		log.Printf("GTK loop started... Checking for config")
-		ok, err := clipster.OpenConfigFile()
-		if !ok {
-			log.Println("Error:", err)
-			clipster.ShowEditCredsGUI()
-			log.Println("After Show Gui")
-		} else {
-			creds, _ := clipster.LoadConfigFromFile()
-			log.Printf("%+v", creds)
-		}
+		// ok, err := clipster.OpenConfigFile()
+		clipster.OpenConfigFile()
+		clipster.ShowEditCredsGUI()
+		// if !ok {
+		// 	log.Println("Error:", err)
+		// 	clipster.ShowEditCredsGUI()
+		// 	log.Println("After Show Gui")
+		// } else {
+		// 	creds, _ := clipster.LoadConfigFromFile()
+		// 	log.Printf("%+v", creds)
+		// }
 	}()
 	<-finish
 }

@@ -89,8 +89,38 @@ func ShowEditCredsGUI() {
 // 	}
 // }
 
-func login_workflow(host string, user string, pw string) {
-	// login_workflow check for completeness of creds
+func register_flow(host string, user string, pw string) {
+	// register_flow check for completeness of creds
+	// creates hash from them
+	// uses hash to register at API endpoint
+	// displays Message box with the result
+	// on success saves credentials to config
+	host, user, pw, err := AreCredsComplete(host, user, pw)
+	if err != nil {
+		mainWindow.Message(err.Error()).WithError().Show()
+		log.Println("Error:", err)
+		return
+	}
+	log.Println("Registration:", host, user, pw)
+
+	hash_login := GetLoginHashFromPw(user, pw)
+	// TODO: This is blocking. Goroutine?
+	if err := APIRegister(host, user, hash_login); err != nil {
+		log.Println("Error:", err)
+		mainWindow.Message(err.Error()).WithError().Show()
+		return
+	}
+	hash_msg := GetMsgHashFromPw(user, pw)
+	// TODO: get checkbox value
+	c := Config{host, user, hash_login, hash_msg, true}
+	WriteConfigFile(c)
+	log.Println("Ok: Registration flow completed")
+	mainWindow.Message("Registration successfull\nCredentials saved to config:\n" + CONFIG_FILEPATH).WithInfo().Show()
+	mainWindow.Close()
+}
+
+func login_flow(host string, user string, pw string) {
+	// login_flow check for completeness of creds
 	// creates hash from them
 	// uses hash to authemtocate against API endpoint
 	// displays Message box with the result
@@ -149,10 +179,10 @@ func renderCredsWindow() base.Widget {
 						&goey.HBox{
 							Children: []base.Widget{
 								&goey.Button{Text: "Login", OnClick: func() {
-									login_workflow(host, user, pw)
+									login_flow(host, user, pw)
 								}},
 								&goey.Button{Text: "Register", OnClick: func() {
-									Register(host, user, pw)
+									register_flow(host, user, pw)
 								}},
 								&goey.Button{Text: "Cancel", OnClick: func() { mainWindow.Close() }}},
 							AlignMain: goey.MainStart,
