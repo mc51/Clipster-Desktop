@@ -42,7 +42,7 @@ func ReadIconAsImageFromFile(filename string) (image.Image, error) {
 }
 
 func AreCredsComplete(host string, user string, pw string) (string, string, string, error) {
-	// AreCredsComplete check if entered credentials are complete
+	// AreCredsComplete check if entered credentials are complete and hostname is valid
 	var err error = nil
 	host = strings.TrimSpace(host)
 	user = strings.TrimSpace(user)
@@ -62,6 +62,7 @@ func AreCredsComplete(host string, user string, pw string) (string, string, stri
 }
 
 func isHostnameValid(host string) bool {
+	// isHostnameValid checks hostname against some regex for basic validity
 	match, _ := regexp.Match(RE_HOSTNAME, []byte(host))
 	return match
 }

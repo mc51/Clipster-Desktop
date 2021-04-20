@@ -22,7 +22,7 @@ const ICON_FILENAME = "assets/clipster_icon_128.png"
 const API_URI_COPY_PASTE = "/copy-paste/"
 const API_URI_REGISTER = "/register/"
 const API_URI_LOGIN = "/verify-user/"
-const API_TIMEOUT = 6
+const API_REQ_TIMEOUT = 6
 
 // Must be same as the other clients
 const HASH_ITERS_LOGIN = 20000
@@ -30,12 +30,14 @@ const HASH_ITERS_MSG = 10000
 const HASH_LENGTH = 32
 
 type Config struct {
-	Server          string
-	Username        string
-	Hash_login      string
-	Hash_msg        string
-	Verify_ssl_cert bool
+	Server                 string
+	Username               string
+	Hash_login             string
+	Hash_msg               string
+	Disable_ssl_cert_check bool
 }
+
+var conf Config
 
 func init() {
 	initConfigPaths()
@@ -60,7 +62,6 @@ func OpenConfigFile() (bool, error) {
 func LoadConfigFromFile() (Config, error) {
 	// LoadConfigFromFile loads the credentials from the already opened config file
 	log.Println("Loading config file to struct")
-	var conf Config
 	if err := viper.Unmarshal(&conf); err != nil {
 		log.Println("Error: Could not decode config into struct")
 		return conf, err

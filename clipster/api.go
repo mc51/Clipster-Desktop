@@ -12,8 +12,12 @@ import (
 	"time"
 )
 
-func justPrint() {
-	fmt.Println("Just Print!")
+type Clips struct {
+	Id         int
+	User       string
+	Text       string
+	Device     string
+	Created_at string
 }
 
 func GetLastClip() {
@@ -21,19 +25,53 @@ func GetLastClip() {
 	fmt.Println("Get Last Clip")
 }
 
-func GetAllClips() {
-	// TODO
-	fmt.Println("Get all Clips")
-}
-
-func Register(host string, user string, pw string) {
-	host, user, pw, err := AreCredsComplete(host, user, pw)
+func APIDownloadAllClips() ([]Clips, error) {
+	// APIDownloadAllClips retrieves all Clips from server and returns them as Clips struct
+	var clips []Clips
+	url := conf.Server + API_URI_COPY_PASTE
+	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-
-	} else {
 		log.Println("Error:", err)
+		return nil, err
 	}
-	log.Println("Register:", host, user, pw)
+
+	req.Header.Set("Accept", "application/json")
+	req.SetBasicAuth("m", conf.Hash_login)
+
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: conf.Disable_ssl_cert_check},
+	}
+	client := http.Client{Timeout: API_REQ_TIMEOUT * time.Second, Transport: tr}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("Error:", err)
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 200 && resp.StatusCode < 400 {
+		log.Println("Ok: Download Clips")
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Println("Error:", err)
+			return nil, err
+		}
+		log.Println("Ok: Download Clips", string(body))
+		err = json.Unmarshal(body, &clips)
+		if err != nil {
+			log.Println("Error:", err)
+			return nil, err
+		}
+		return clips, nil
+	} else {
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Println("Error:", err)
+			return nil, err
+		}
+		log.Println("Error: download Clips", string(body))
+		return nil, errors.New("download Clips failed: " + string(body))
+	}
 }
 
 func APIRegister(host string, user string, hash_login string, ssl_disable bool) error {
@@ -59,7 +97,7 @@ func APIRegister(host string, user string, hash_login string, ssl_disable bool) 
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: ssl_disable},
 	}
-	client := http.Client{Timeout: API_TIMEOUT * time.Second, Transport: tr}
+	client := http.Client{Timeout: API_REQ_TIMEOUT * time.Second, Transport: tr}
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Println("Error:", err)
@@ -96,7 +134,7 @@ func APILogin(host string, user string, hash_login string, ssl_disable bool) err
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: ssl_disable},
 	}
-	client := http.Client{Timeout: API_TIMEOUT * time.Second, Transport: tr}
+	client := http.Client{Timeout: API_REQ_TIMEOUT * time.Second, Transport: tr}
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Println("Error:", err)

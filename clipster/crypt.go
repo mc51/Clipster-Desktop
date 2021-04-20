@@ -32,14 +32,22 @@ func Encrypt(user string, pw string, text string, iters int) string {
 	return string(tok)
 }
 
+func Decrypt(text string, iters int) string {
+	// Decrypt decrypts a text using hash_login as a key and Fernet
+	key := fernet.MustDecodeKeys(conf.Hash_msg)
+	msg := fernet.VerifyAndDecrypt([]byte(text), 0, key)
+	log.Println("Ok: decrypted text", string(msg))
+	return string(msg)
+}
+
 func GetLoginHashFromPw(user string, pw string) string {
-	// PwToHash returns a hash of the password for login
+	// GetLoginHashFromPw returns a hash of the password to be used for authentication
 	hash := deriveKey(user, pw, HASH_ITERS_LOGIN)
 	return hash
 }
 
 func GetMsgHashFromPw(user string, pw string) string {
-	// GetPwHash returns password hash as strings
+	// GetMsgHashFromPw returns a hash of the password to be used as encryption key
 	hash := deriveKey(user, pw, HASH_ITERS_MSG)
 	return hash
 }

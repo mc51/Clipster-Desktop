@@ -47,7 +47,8 @@ func StartGUIInForeground() {
 }
 
 func createHiddenWindow() error {
-	// Hidden Window Keeps GTK main loop running
+	// createHiddenWindow keeps GTK main loop running without showing a window
+	// to keep tray icon available
 	log.Println("createHiddenWindow")
 	// this need adapted goey function without gtk call to .show()
 	_, err := goey.NewHiddenWindow("", nil)
@@ -76,8 +77,10 @@ func GUIAskForCredentials() error {
 
 func ShowEditCredsGUI() {
 	if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
+		// need to run on main Thread (=GUI Thread)
 		loop.Do(GUIAskForCredentials)
 	} else if runtime.GOOS == "windows" {
+		// can run separately
 		StartGUIInForeground()
 	}
 }
@@ -88,6 +91,22 @@ func ShowEditCredsGUI() {
 // 		log.Println("Error:", err)
 // 	}
 // }
+
+func DownloadAllClipsFlow() {
+	// DownloadAllClipsFlow downloads all clips as json from API
+	// unencrypts the encrypted texts
+	// display result in gui
+	clips, err := APIDownloadAllClips()
+	if err != nil {
+		mainWindow.Message(err.Error()).WithError().Show()
+		log.Println("Error:", err)
+		return
+	}
+	log.Printf("Clips: %+v", clips)
+	log.Println(clips[0].Text)
+	clip := Decrypt(clips[0].Text, HASH_ITERS_MSG)
+	log.Println("Unecrspted clip:", clip)
+}
 
 func register_flow(host string, user string, pw string, ssl_disable bool) {
 	// register_flow check for completeness of creds
@@ -101,7 +120,8 @@ func register_flow(host string, user string, pw string, ssl_disable bool) {
 		log.Println("Error:", err)
 		return
 	}
-	log.Println("Registration:", host, user, pw)
+	// TODO: Remove all cleartext pws from logs?
+	log.Println("Registration:", host, user, pw, ssl_disable)
 
 	hash_login := GetLoginHashFromPw(user, pw)
 	// TODO: This is blocking. Goroutine?
@@ -112,8 +132,8 @@ func register_flow(host string, user string, pw string, ssl_disable bool) {
 	}
 	hash_msg := GetMsgHashFromPw(user, pw)
 	// TODO: get checkbox value
-	c := Config{host, user, hash_login, hash_msg, true}
-	WriteConfigFile(c)
+	conf := Config{host, user, hash_login, hash_msg, ssl_disable}
+	WriteConfigFile(conf)
 	log.Println("Ok: Registration flow completed")
 	mainWindow.Message("Registration successfull\nCredentials saved to config:\n" + CONFIG_FILEPATH).WithInfo().Show()
 	mainWindow.Close()
@@ -131,7 +151,8 @@ func login_flow(host string, user string, pw string, ssl_disable bool) {
 		log.Println("Error:", err)
 		return
 	}
-	log.Println("Login:", host, user, pw)
+	// TODO: Remove all cleartext pws from logs?
+	log.Println("Login:", host, user, pw, ssl_disable)
 
 	hash_login := GetLoginHashFromPw(user, pw)
 	// TODO: This is blocking. Goroutine?
@@ -142,8 +163,8 @@ func login_flow(host string, user string, pw string, ssl_disable bool) {
 	}
 	hash_msg := GetMsgHashFromPw(user, pw)
 	// TODO: get checkbox value
-	c := Config{host, user, hash_login, hash_msg, true}
-	WriteConfigFile(c)
+	conf := Config{host, user, hash_login, hash_msg, ssl_disable}
+	WriteConfigFile(conf)
 	log.Println("Ok: login workflow completed")
 	mainWindow.Message("Login successfull\nCredentials saved to config:\n" + CONFIG_FILEPATH).WithInfo().Show()
 	mainWindow.Close()
@@ -163,10 +184,10 @@ func renderCredsWindow() base.Widget {
 								host = v
 								log.Println("server input ", v)
 							}},
-						&goey.Checkbox{Text: "Disable SSL cert check",
-							OnChange: func(v bool) {
-								ssl_disable = v
-								log.Println("check box input: ", v)
+						&goey.Checkbox{Text: "Disable SSL cert check", Value: false,
+							OnChange: func(val_check bool) {
+								ssl_disable = val_check
+								log.Println("check box input: ", val_check)
 							}},
 						&goey.Label{Text: "Username:"},
 						&goey.TextInput{Value: user, Placeholder: "Enter username",
