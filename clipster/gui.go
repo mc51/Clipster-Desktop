@@ -2,6 +2,7 @@
 package clipster
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"runtime"
@@ -75,6 +76,22 @@ func GUIAskForCredentials() error {
 	return nil
 }
 
+func GUIShowClips(clips []string) error {
+	log.Println("GUIShowClips")
+	w, err := goey.NewWindow("Clipster – Your Clips", renderShowClipsWindows(clips))
+	if err != nil {
+		return err
+	}
+	icon, err := ReadIconAsImageFromFile(ICON_FILENAME)
+	if err != nil {
+		return err
+	}
+	w.SetScroll(false, false)
+	w.SetIcon(icon)
+	mainWindow = w
+	return nil
+}
+
 func ShowEditCredsGUI() {
 	if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
 		// need to run on main Thread (=GUI Thread)
@@ -96,16 +113,24 @@ func DownloadAllClipsFlow() {
 	// DownloadAllClipsFlow downloads all clips as json from API
 	// unencrypts the encrypted texts
 	// display result in gui
-	clips, err := APIDownloadAllClips()
+	clips_ecrypted, err := APIDownloadAllClips()
 	if err != nil {
 		mainWindow.Message(err.Error()).WithError().Show()
 		log.Println("Error:", err)
 		return
 	}
-	log.Printf("Clips: %+v", clips)
-	log.Println(clips[0].Text)
-	clip := Decrypt(clips[0].Text, HASH_ITERS_MSG)
-	log.Println("Unecrspted clip:", clip)
+	log.Printf("Clips: %+v", clips_ecrypted)
+
+	clips_decrypted := make([]string, len(clips_ecrypted))
+
+	for i := range clips_ecrypted {
+		clips_decrypted[i] = Decrypt(clips_ecrypted[i].Text, HASH_ITERS_MSG)
+	}
+	log.Println("Unencrypted clip:", clips_decrypted)
+
+	f := func() error { return GUIShowClips(clips_decrypted) }
+	loop.Do(f)
+
 }
 
 func register_flow(host string, user string, pw string, ssl_disable bool) {
@@ -171,6 +196,7 @@ func login_flow(host string, user string, pw string, ssl_disable bool) {
 }
 
 func renderCredsWindow() base.Widget {
+	// renderCredsWindow renders the Window for editing Credentials
 	var user, pw, host string
 	var ssl_disable bool
 	widget :=
@@ -220,5 +246,32 @@ func renderCredsWindow() base.Widget {
 	return &goey.Padding{
 		Insets: goey.DefaultInsets(),
 		Child:  widget,
+	}
+}
+
+func renderShowClipsWindows(clips []string) base.Widget {
+	// renderShowClipsWindows renders goey Window showing downloaded Clips
+	widgets := []base.Widget{
+		&goey.Label{Text: "Here are your Clips:"},
+	}
+
+	for _, v := range clips {
+		widgets = append(widgets, &goey.TextInput{Value: v,
+			OnChange:   func(v string) { println("text input ", v) },
+			OnEnterKey: func(v string) { println("t1* ", v) }})
+	}
+
+	widgets = append(widgets, &goey.HBox{
+		Children: []base.Widget{
+			&goey.Button{Text: "Copy to Clipboatd", OnClick: func() {
+				fmt.Println("Copy to Clipboard")
+			}},
+			&goey.Button{Text: "Cancel", OnClick: func() { mainWindow.Close() }}},
+		AlignMain: goey.MainStart,
+	})
+
+	return &goey.Padding{
+		Insets: goey.DefaultInsets(),
+		Child:  &goey.VBox{Children: widgets},
 	}
 }
