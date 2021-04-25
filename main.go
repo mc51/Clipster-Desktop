@@ -67,18 +67,20 @@ func onReady() {
 		for {
 			select {
 			case <-mLastClip.ClickedCh:
-				log.Println("Last")
+				log.Println("Get last Clip")
+				clipster.DownloadLastClipFlow()
 			case <-mAllClips.ClickedCh:
-				log.Println("All")
+				log.Println("Get all Clips")
 				clipster.DownloadAllClipsFlow()
 			case <-mShareClip.ClickedCh:
-				log.Println("Share")
+				log.Println("Share Clip")
+				clipster.ShareClipFlow()
 			case <-mEditCreds.ClickedCh:
-				log.Println("Creds")
+				log.Println("Edit Creds")
 				clipster.ShowEditCredsGUI()
 			case <-mQuit.ClickedCh:
+				log.Println("Quit")
 				tray.Quit()
-				log.Println("Exiting")
 				return
 			}
 		}

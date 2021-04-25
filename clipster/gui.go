@@ -109,6 +109,37 @@ func ShowEditCredsGUI() {
 // 	}
 // }
 
+func ShareClipFlow() {
+	// ShareClipFlow gets current clipboard value, encrypts it
+	// uploads it to server and shows notification
+	log.Println("ShareClipFlow")
+	clip := GetClipboard()
+	clip_encrypted := Encrypt(clip)
+	if err := APIShareClip(clip_encrypted); err != nil {
+		ShowNotification("Clipster - Error", err.Error())
+		log.Println("Error:", err)
+		return
+	}
+	ShowNotification("Clipster – Shared clip", clip)
+}
+
+func DownloadLastClipFlow() {
+	// DownloadLastClipFlow downloads all clips as json from API
+	// unencrypts the latest encrypted text
+	// copies content to clipboard and shows notification
+	log.Println("DownloadLastClipFlow")
+	clips_ecrypted, err := APIDownloadAllClips()
+	if err != nil {
+		mainWindow.Message(err.Error()).WithError().Show()
+		log.Println("Error:", err)
+		return
+	}
+	log.Printf("Clips: %+v", clips_ecrypted)
+	clip_decrypted := Decrypt(clips_ecrypted[len(clips_ecrypted)-1].Text)
+	SetClipboard(clip_decrypted)
+	ShowNotification("Clipster – Got new clip", clip_decrypted)
+}
+
 func DownloadAllClipsFlow() {
 	// DownloadAllClipsFlow downloads all clips as json from API
 	// unencrypts the encrypted texts
@@ -122,15 +153,12 @@ func DownloadAllClipsFlow() {
 	log.Printf("Clips: %+v", clips_ecrypted)
 
 	clips_decrypted := make([]string, len(clips_ecrypted))
-
 	for i := range clips_ecrypted {
-		clips_decrypted[i] = Decrypt(clips_ecrypted[i].Text, HASH_ITERS_MSG)
+		clips_decrypted[i] = Decrypt(clips_ecrypted[i].Text)
 	}
-	log.Println("Unencrypted clip:", clips_decrypted)
 
 	f := func() error { return GUIShowClips(clips_decrypted) }
 	loop.Do(f)
-
 }
 
 func register_flow(host string, user string, pw string, ssl_disable bool) {

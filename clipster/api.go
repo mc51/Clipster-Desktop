@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -20,13 +19,54 @@ type Clips struct {
 	Created_at string
 }
 
-func GetLastClip() {
-	// TODO
-	fmt.Println("Get Last Clip")
+func APIShareClip(clip string) error {
+	// APIShareClip sends encrypted Clip to API endpoint for sharing
+	url := conf.Server + API_URI_COPY_PASTE
+	payload, err := json.Marshal(map[string]string{
+		"text":   clip,
+		"device": "desktop",
+	})
+	if err != nil {
+		log.Println("Error", err)
+		return err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(payload))
+	if err != nil {
+		log.Println("Error:", err)
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json")
+	req.SetBasicAuth("m", conf.Hash_login)
+
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: conf.Disable_ssl_cert_check},
+	}
+	client := http.Client{Timeout: API_REQ_TIMEOUT * time.Second, Transport: tr}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("Error:", err)
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 200 && resp.StatusCode < 400 {
+		log.Println("Ok: sharing clip successfull")
+		return nil
+	} else {
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Println("Error:", err)
+			return err
+		}
+		log.Println("Error: sharing clip failed", string(body))
+		return errors.New("Sharing clip failed: " + string(body))
+	}
 }
 
 func APIDownloadAllClips() ([]Clips, error) {
-	// APIDownloadAllClips retrieves all Clips from server and returns them as Clips struct
+	// APIDownloadAllClips retrieves all encrypted Clips from server and returns them as Clips struct
 	var clips []Clips
 	url := conf.Server + API_URI_COPY_PASTE
 	req, err := http.NewRequest(http.MethodGet, url, nil)

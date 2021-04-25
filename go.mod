@@ -10,6 +10,7 @@ require (
 	github.com/lxn/win v0.0.0-20210218163916-a377121e959e
 	github.com/spf13/viper v1.7.1
 	gitlab.com/stone.code/assert v1.1.0
+	golang.design/x/clipboard v0.4.4
 	golang.org/x/crypto v0.0.0-20190605123033-f99c8df09eb5
 	golang.org/x/image v0.0.0-20210220032944-ac19c3e999fb
 	golang.org/x/sys v0.0.0-20201018230417-eeed37f84f13
