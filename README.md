@@ -12,7 +12,7 @@ For the Android client see [Clipster-Android](https://github.com/mc51/Clipster-A
 To run your own server check [Clipster-Server](https://github.com/mc51/Clipster-Server).  
 There is  an alternative [Clipster-Desktop](https://github.com/mc51/Clipster-Desktop-Py) implementation written in Python.
   
-![Clipster demo](resources/demo_01.gif)  
+![Clipster demo](assets/demo_01.gif)  
   
 ## Setup
 
