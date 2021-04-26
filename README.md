@@ -1,6 +1,6 @@
 # Clipster - Desktop Client (Go)
 
-[![GitHub Actions Build Workflow](https://github.com/mc51/Clipster-Desktop/workflows/Build/badge.svg)](https://github.com/mc51/Clipster-Desktop/actions) [![PyPi version](https://img.shields.io/pypi/v/clipster-desktop.svg)](https://pypi.org/project/clipster-desktop)  
+[![GitHub Actions Build Workflow](https://github.com/mc51/Clipster-Desktop/workflows/Build/badge.svg)](https://github.com/mc51/Clipster-Desktop/actions)  
 
 Clipster is a multi platform cloud clipboard:  
 Copy a text on your smartphone and paste it on your desktop, or vice versa.  

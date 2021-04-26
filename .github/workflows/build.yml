@@ -39,7 +39,7 @@ jobs:
         include:
           - os: ubuntu-latest
             TARGET: linux
-            CMB_RESOLVE_DEPS: sudo apt-get -y install libgtk-3-dev
+            CMD_RESOLVE_DEPS: sudo apt-get update && sudo apt-get -y install libgtk-3-dev
             CMD_BUILD: go mod tidy && go build -o build/clipster
             OUT_FILE_NAME: clipster
             ASSET_MIME: application/octet-stream
@@ -60,8 +60,8 @@ jobs:
         go-version: ${{ matrix.go-version }}
     - name: Checkout repo
       uses: actions/checkout@v2
-    - name: Resolve dependencies
-      run: ${{matrix.CMB_RESOLVE_DEPS}}
+    - name: Resolve dependencies for ${{matrix.TARGET}}
+      run: ${{matrix.CMD_RESOLVE_DEPS}}
     - name: Build Go for ${{matrix.TARGET}}
       run: ${{matrix.CMD_BUILD}}
     - name: Load Release URL File from release job
