@@ -1,3 +1,4 @@
+// Deal with reading, writing and loading configuration
 package clipster
 
 import (

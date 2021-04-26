@@ -26,7 +26,7 @@ func ShowNotification(title string, body string) {
 }
 
 func StartGUIInBackground() {
-	// For GTK
+	// For GTK to start main loop without showing a window but show trayicon
 	log.Println("StartGui")
 	err := loop.Run(createHiddenWindow)
 	if err != nil {

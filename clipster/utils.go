@@ -1,3 +1,4 @@
+// Utility functions used throughout package
 package clipster
 
 import (

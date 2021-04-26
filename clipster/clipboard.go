@@ -1,4 +1,4 @@
-// Show GUI
+// Deal with copy and paste to/from clipboard
 package clipster
 
 import (
