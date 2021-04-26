@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"guitest/goey/loop"
+	"clipster/goey/loop"
 )
 
 type screenshoter interface {

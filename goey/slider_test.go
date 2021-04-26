@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"testing"
 
-	"guitest/goey/base"
-	"guitest/goey/loop"
+	"clipster/goey/base"
+	"clipster/goey/loop"
 )
 
 func ExampleSlider() {

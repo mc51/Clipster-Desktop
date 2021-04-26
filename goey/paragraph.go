@@ -1,11 +1,11 @@
 package goey
 
 import (
-	"guitest/goey/base"
+	"clipster/goey/base"
 )
 
 var (
-	paragraphKind     = base.NewKind("guitest/goey.Paragraph")
+	paragraphKind     = base.NewKind("clipster/goey.Paragraph")
 	paragraphMaxWidth base.Length
 )
 

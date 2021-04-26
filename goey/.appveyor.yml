@@ -13,33 +13,33 @@ init:
 - sh: Xvfb :1 -screen 0 1024x768x24 &
 - sh: go version
 clone_script:
-- cmd: git clone https://guitest/goey %APPVEYOR_BUILD_FOLDER%/src/guitest/goey
+- cmd: git clone https://clipster/goey %APPVEYOR_BUILD_FOLDER%/src/clipster/goey
 - cmd: set GOPATH=%APPVEYOR_BUILD_FOLDER%
-- sh: git clone https://guitest/goey ${APPVEYOR_BUILD_FOLDER}/src/guitest/goey
+- sh: git clone https://clipster/goey ${APPVEYOR_BUILD_FOLDER}/src/clipster/goey
 - sh: export GOPATH=${APPVEYOR_BUILD_FOLDER}
 install:
-- cmd: go get -d guitest/goey guitest/goey/example/...
-- sh: go get -d guitest/goey guitest/goey/example/...
+- cmd: go get -d clipster/goey clipster/goey/example/...
+- sh: go get -d clipster/goey clipster/goey/example/...
 build_script:
-- cmd: go install -v guitest/goey/ guitest/goey/example/...
-- sh: go install -v guitest/goey/ guitest/goey/example/...
+- cmd: go install -v clipster/goey/ clipster/goey/example/...
+- sh: go install -v clipster/goey/ clipster/goey/example/...
 test_script:
 - ps: Add-AppveyorTest -Name "Base" -Framework "Go" -FileName "base.test" -Outcome Running
-- cmd: go test -v guitest/goey/base
-- sh: go test -v guitest/goey/base
+- cmd: go test -v clipster/goey/base
+- sh: go test -v clipster/goey/base
 - ps: Add-AppveyorTest -Name "Base" -Framework "Go" -FileName "base.test" -Outcome $(If ($?) {"Passed"} Else {"Failed"})
 - ps: Add-AppveyorTest -Name "Loop" -Framework "Go" -FileName "loop.test" -Outcome Running
-- cmd: go test -v -race guitest/goey/loop
-- sh: go test -v -race guitest/goey/loop
+- cmd: go test -v -race clipster/goey/loop
+- sh: go test -v -race clipster/goey/loop
 - ps: Add-AppveyorTest -Name "Loop" -Framework "Go" -FileName "loop.test" -Outcome $(If ($?) {"Passed"} Else {"Failed"})
 - ps: Add-AppveyorTest -Name "Dialog" -Framework "Go" -FileName "dialog.test" -Outcome Running
-- sh: go test -v guitest/goey/dialog
+- sh: go test -v clipster/goey/dialog
 - ps: Add-AppveyorTest -Name "Dialog" -Framework "Go" -FileName "dialog.test" -Outcome $(If ($?) {"Passed"} Else {"Failed"})
 - ps: Add-AppveyorTest -Name "Goey" -Framework "Go" -FileName "goey.test" -Outcome Running
-- cmd: go test -v guitest/goey
-- sh: go test -v guitest/goey
+- cmd: go test -v clipster/goey
+- sh: go test -v clipster/goey
 - ps: Add-AppveyorTest -Name "Goey" -Framework "Go" -FileName "goey.test" -Outcome $(If ($?) {"Passed"} Else {"Failed"})
-- cmd: go test -v guitest/goey/animate
-- sh: go test -v guitest/goey/animate
-- cmd: go test -v guitest/goey/icons
-- sh: go test -v guitest/goey/icons
+- cmd: go test -v clipster/goey/animate
+- sh: go test -v clipster/goey/animate
+- cmd: go test -v clipster/goey/icons
+- sh: go test -v clipster/goey/icons

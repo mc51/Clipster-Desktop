@@ -5,9 +5,9 @@ package goey
 import (
 	"time"
 
-	"guitest/goey/base"
-	"guitest/goey/internal/cocoa"
-	"guitest/goey/loop"
+	"clipster/goey/base"
+	"clipster/goey/internal/cocoa"
+	"clipster/goey/loop"
 )
 
 type textinputElement struct {

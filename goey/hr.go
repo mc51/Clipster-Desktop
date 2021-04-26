@@ -1,11 +1,11 @@
 package goey
 
 import (
-	"guitest/goey/base"
+	"clipster/goey/base"
 )
 
 var (
-	hrKind = base.NewKind("guitest/goey.HR")
+	hrKind = base.NewKind("clipster/goey.HR")
 )
 
 // HR describes a widget that is a horizontal separator.

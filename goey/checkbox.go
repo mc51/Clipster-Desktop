@@ -1,11 +1,11 @@
 package goey
 
 import (
-	"guitest/goey/base"
+	"clipster/goey/base"
 )
 
 var (
-	checkboxKind = base.NewKind("guitest/goey.Checkbox")
+	checkboxKind = base.NewKind("clipster/goey.Checkbox")
 )
 
 // Checkbox describes a widget that users input or update a flag.

@@ -1,11 +1,11 @@
 package goey
 
 import (
-	"guitest/goey/base"
+	"clipster/goey/base"
 )
 
 var (
-	progressKind = base.NewKind("guitest/goey.Progress")
+	progressKind = base.NewKind("clipster/goey.Progress")
 )
 
 // Progress describes a widget that shows a progress bar.

@@ -6,10 +6,10 @@ import (
 	"syscall"
 	"unsafe"
 
-	"guitest/goey/base"
-	"guitest/goey/dialog"
-	win2 "guitest/goey/internal/syscall"
-	"guitest/goey/loop"
+	"clipster/goey/base"
+	"clipster/goey/dialog"
+	win2 "clipster/goey/internal/syscall"
+	"clipster/goey/loop"
 	"github.com/lxn/win"
 )
 

@@ -1,11 +1,11 @@
 package goey
 
 import (
-	"guitest/goey/base"
+	"clipster/goey/base"
 )
 
 var (
-	paddingKind = base.NewKind("guitest/goey.Padding")
+	paddingKind = base.NewKind("clipster/goey.Padding")
 )
 
 // Insets describe padding that should be added around a widget.

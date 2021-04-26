@@ -6,7 +6,7 @@ import (
 	"testing"
 	"unsafe"
 
-	"guitest/goey/internal/nopanic"
+	"clipster/goey/internal/nopanic"
 	"github.com/lxn/win"
 )
 

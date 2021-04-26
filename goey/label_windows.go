@@ -4,8 +4,8 @@ import (
 	"syscall"
 	"unsafe"
 
-	"guitest/goey/base"
-	win2 "guitest/goey/internal/syscall"
+	"clipster/goey/base"
+	win2 "clipster/goey/internal/syscall"
 	"github.com/lxn/win"
 )
 

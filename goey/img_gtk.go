@@ -6,8 +6,8 @@ import (
 	"image"
 	"image/draw"
 
-	"guitest/goey/base"
-	"guitest/goey/internal/gtk"
+	"clipster/goey/base"
+	"clipster/goey/internal/gtk"
 )
 
 type imgElement struct {

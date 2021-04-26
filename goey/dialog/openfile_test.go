@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"guitest/goey/loop"
+	"clipster/goey/loop"
 )
 
 func getwd(t *testing.T) string {

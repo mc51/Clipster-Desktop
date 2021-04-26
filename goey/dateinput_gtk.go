@@ -5,8 +5,8 @@ package goey
 import (
 	"time"
 
-	"guitest/goey/base"
-	"guitest/goey/internal/gtk"
+	"clipster/goey/base"
+	"clipster/goey/internal/gtk"
 )
 
 type dateinputElement struct {

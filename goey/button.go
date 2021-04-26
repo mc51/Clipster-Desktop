@@ -1,11 +1,11 @@
 package goey
 
 import (
-	"guitest/goey/base"
+	"clipster/goey/base"
 )
 
 var (
-	buttonKind = base.NewKind("guitest/goey.Button")
+	buttonKind = base.NewKind("clipster/goey.Button")
 )
 
 // Button describes a widget that users can click to initiate an action.

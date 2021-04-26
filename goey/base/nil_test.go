@@ -23,12 +23,12 @@ func ExampleMount() {
 
 	// Output:
 	// The value of elem is nil... false
-	// The kind of elem is... guitest/goey/base.nil
+	// The kind of elem is... clipster/goey/base.nil
 }
 
 func TestMount(t *testing.T) {
-	kind1 := NewKind("guitest/goey/base.Mock1")
-	kind2 := NewKind("guitest/goey/base.Mock2")
+	kind1 := NewKind("clipster/goey/base.Mock1")
+	kind2 := NewKind("clipster/goey/base.Mock2")
 	err1 := errors.New("fake error 1 for mounting widget")
 	err2 := errors.New("fake error 2 for mounting widget")
 

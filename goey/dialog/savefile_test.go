@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"guitest/goey/loop"
+	"clipster/goey/loop"
 )
 
 func TestNewSaveFile(t *testing.T) {

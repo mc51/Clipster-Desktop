@@ -6,9 +6,9 @@ import (
 	"time"
 	"unsafe"
 
-	"guitest/goey/base"
-	win2 "guitest/goey/internal/syscall"
-	"guitest/goey/loop"
+	"clipster/goey/base"
+	win2 "clipster/goey/internal/syscall"
+	"clipster/goey/loop"
 	"github.com/lxn/win"
 )
 

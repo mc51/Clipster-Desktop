@@ -1,7 +1,7 @@
 package base
 
 var (
-	nilKind = NewKind("guitest/goey/base.nil")
+	nilKind = NewKind("clipster/goey/base.nil")
 )
 
 // Mount will try to mount a widget.  In the case where the widget is non-nil,

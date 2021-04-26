@@ -1,11 +1,11 @@
 package goey
 
 import (
-	"guitest/goey/base"
+	"clipster/goey/base"
 )
 
 var (
-	vboxKind = base.NewKind("guitest/goey.VBox")
+	vboxKind = base.NewKind("clipster/goey.VBox")
 )
 
 // MainAxisAlign identifies the different types of alignment that are possible

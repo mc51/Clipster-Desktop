@@ -6,7 +6,7 @@ import (
 	"testing"
 	"testing/quick"
 
-	"guitest/goey/base"
+	"clipster/goey/base"
 )
 
 func paragraphValues(values []reflect.Value, rand *rand.Rand) {

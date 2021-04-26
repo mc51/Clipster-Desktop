@@ -1,7 +1,7 @@
 package animate
 
 import (
-	"guitest/goey/base"
+	"clipster/goey/base"
 )
 
 // EaseLength encapsulates the calculations needs to smoothly vary a length.

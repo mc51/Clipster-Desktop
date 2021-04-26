@@ -1,11 +1,11 @@
 package goey
 
 import (
-	"guitest/goey/base"
+	"clipster/goey/base"
 )
 
 var (
-	textareaKind = base.NewKind("guitest/goey.TextArea")
+	textareaKind = base.NewKind("clipster/goey.TextArea")
 )
 
 // TextArea describes a widget that users input or update a multi-line of text.

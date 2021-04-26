@@ -1,4 +1,4 @@
-module guitest
+module clipster
 
 go 1.16
 

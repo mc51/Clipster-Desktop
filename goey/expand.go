@@ -1,11 +1,11 @@
 package goey
 
 import (
-	"guitest/goey/base"
+	"clipster/goey/base"
 )
 
 var (
-	expandKind = base.NewKind("guitest/goey.Expand")
+	expandKind = base.NewKind("clipster/goey.Expand")
 )
 
 // Expand wraps another widget to indicate that the widget should expand to

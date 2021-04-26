@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"guitest/goey/loop"
+	"clipster/goey/loop"
 )
 
 func ExampleNewMessage() {

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"guitest/goey/base"
+	"clipster/goey/base"
 )
 
 func TestTextAreaMount(t *testing.T) {

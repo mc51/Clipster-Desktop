@@ -3,11 +3,11 @@ package goey
 import (
 	"image/color"
 
-	"guitest/goey/base"
+	"clipster/goey/base"
 )
 
 var (
-	decorationKind = base.NewKind("guitest/goey.Decoration")
+	decorationKind = base.NewKind("clipster/goey.Decoration")
 )
 
 // Decoration describes a widget that provides a border and background, and

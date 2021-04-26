@@ -1,11 +1,11 @@
 package animate
 
 import (
-	"guitest/goey/base"
+	"clipster/goey/base"
 )
 
 var (
-	wipeKind = base.NewKind("guitest/goey/animate.Wipe")
+	wipeKind = base.NewKind("clipster/goey/animate.Wipe")
 )
 
 // Wipe provides an animation when changing its child widget.

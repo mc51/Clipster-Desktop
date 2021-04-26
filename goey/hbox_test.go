@@ -3,8 +3,8 @@ package goey
 import (
 	"testing"
 
-	"guitest/goey/base"
-	"guitest/goey/mock"
+	"clipster/goey/base"
+	"clipster/goey/mock"
 )
 
 func (w *hboxElement) Props() base.Widget {

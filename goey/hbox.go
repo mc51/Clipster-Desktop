@@ -1,11 +1,11 @@
 package goey
 
 import (
-	"guitest/goey/base"
+	"clipster/goey/base"
 )
 
 var (
-	hboxKind = base.NewKind("guitest/goey.HBox")
+	hboxKind = base.NewKind("clipster/goey.HBox")
 )
 
 // HBox describes a layout widget that arranges its child widgets into a row.

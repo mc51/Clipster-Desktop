@@ -8,10 +8,10 @@ package main
 import (
 	"fmt"
 
-	"guitest/goey"
-	"guitest/goey/base"
-	"guitest/goey/icons"
-	"guitest/goey/loop"
+	"clipster/goey"
+	"clipster/goey/base"
+	"clipster/goey/icons"
+	"clipster/goey/loop"
 )
 
 // IconData describes a single icon in the font.

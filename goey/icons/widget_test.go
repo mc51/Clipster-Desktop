@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"guitest/goey"
-	"guitest/goey/base"
-	"guitest/goey/loop"
+	"clipster/goey"
+	"clipster/goey/base"
+	"clipster/goey/loop"
 )
 
 const Build = rune(0xe869)

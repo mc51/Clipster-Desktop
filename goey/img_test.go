@@ -6,7 +6,7 @@ import (
 	"image/draw"
 	"testing"
 
-	"guitest/goey/base"
+	"clipster/goey/base"
 )
 
 func drawVerticalRGB(img draw.Image) {

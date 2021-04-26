@@ -4,8 +4,8 @@ import (
 	"errors"
 	"testing"
 
-	"guitest/goey/base"
-	"guitest/goey/mock"
+	"clipster/goey/base"
+	"clipster/goey/mock"
 )
 
 func (w *alignElement) Props() base.Widget {

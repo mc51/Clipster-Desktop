@@ -1,11 +1,11 @@
 package goey
 
 import (
-	"guitest/goey/base"
+	"clipster/goey/base"
 )
 
 var (
-	labelKind = base.NewKind("guitest/goey.Label")
+	labelKind = base.NewKind("clipster/goey.Label")
 )
 
 // Label describes a widget that provides a descriptive label for other fields.

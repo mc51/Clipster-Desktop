@@ -5,7 +5,7 @@ import (
 	"runtime"
 	"testing"
 
-	"guitest/goey/base"
+	"clipster/goey/base"
 )
 
 func TestIntInputMount(t *testing.T) {

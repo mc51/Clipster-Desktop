@@ -1,7 +1,7 @@
 package goey
 
 import (
-	"guitest/goey/base"
+	"clipster/goey/base"
 	"testing"
 )
 

@@ -5,8 +5,8 @@ package dialog
 import (
 	"time"
 
-	"guitest/goey/internal/gtk"
-	"guitest/goey/loop"
+	"clipster/goey/internal/gtk"
+	"clipster/goey/loop"
 )
 
 type dialogImpl struct {

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"guitest/goey/base"
-	"guitest/goey/mock"
+	"clipster/goey/base"
+	"clipster/goey/mock"
 )
 
 func (w *paddingElement) Props() base.Widget {

@@ -1,11 +1,11 @@
 package goey
 
 import (
-	"guitest/goey/base"
+	"clipster/goey/base"
 )
 
 var (
-	intInputKind = base.NewKind("guitest/goey.IntInput")
+	intInputKind = base.NewKind("clipster/goey.IntInput")
 )
 
 // IntInput describes a widget that users input or update a single integer value.

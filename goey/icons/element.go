@@ -1,8 +1,8 @@
 package icons
 
 import (
-	"guitest/goey"
-	"guitest/goey/base"
+	"clipster/goey"
+	"clipster/goey/base"
 )
 
 type iconElement struct {

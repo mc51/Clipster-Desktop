@@ -1,8 +1,8 @@
 package goey
 
 import (
-	"guitest/goey/base"
-	"guitest/goey/mock"
+	"clipster/goey/base"
+	"clipster/goey/mock"
 	"errors"
 	"testing"
 )

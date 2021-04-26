@@ -7,7 +7,7 @@ package cocoa
 */
 import "C"
 import (
-	"guitest/goey/internal/nopanic"
+	"clipster/goey/internal/nopanic"
 	"sync"
 )
 

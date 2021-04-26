@@ -5,8 +5,8 @@ import (
 	"image/color"
 	"testing"
 
-	"guitest/goey/base"
-	"guitest/goey/mock"
+	"clipster/goey/base"
+	"clipster/goey/mock"
 )
 
 var (

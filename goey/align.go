@@ -1,11 +1,11 @@
 package goey
 
 import (
-	"guitest/goey/base"
+	"clipster/goey/base"
 )
 
 var (
-	alignKind = base.NewKind("guitest/goey.Align")
+	alignKind = base.NewKind("clipster/goey.Align")
 )
 
 // Alignment represents the position of a child widget along one dimension.

@@ -7,8 +7,8 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"guitest/goey/internal/nopanic"
-	"guitest/goey/loop"
+	"clipster/goey/internal/nopanic"
+	"clipster/goey/loop"
 )
 
 func ExampleRun() {

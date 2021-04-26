@@ -1,11 +1,11 @@
 package goey
 
 import (
-	"guitest/goey/base"
+	"clipster/goey/base"
 )
 
 var (
-	selectKind = base.NewKind("guitest/goey.SelectInput")
+	selectKind = base.NewKind("clipster/goey.SelectInput")
 )
 
 // SelectInput describes a widget that users can click to select one from a fixed list of choices.

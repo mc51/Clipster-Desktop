@@ -5,7 +5,7 @@ import (
 	"time"
 	"unsafe"
 
-	"guitest/goey/loop"
+	"clipster/goey/loop"
 	"github.com/lxn/win"
 )
 

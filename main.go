@@ -7,9 +7,9 @@ import (
 	"runtime"
 	"time"
 
-	"guitest/clipster"
-	"guitest/goey/loop"
-	"guitest/tray"
+	"clipster/clipster"
+	"clipster/goey/loop"
+	"clipster/tray"
 )
 
 func main() {

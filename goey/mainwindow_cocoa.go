@@ -5,10 +5,10 @@ package goey
 import (
 	"image"
 
-	"guitest/goey/base"
-	"guitest/goey/dialog"
-	"guitest/goey/internal/cocoa"
-	"guitest/goey/loop"
+	"clipster/goey/base"
+	"clipster/goey/dialog"
+	"clipster/goey/internal/cocoa"
+	"clipster/goey/loop"
 )
 
 type windowImpl struct {

@@ -3,7 +3,7 @@
 package dialog
 
 import (
-	"guitest/goey/internal/gtk"
+	"clipster/goey/internal/gtk"
 )
 
 func (m *SaveFile) show() (string, error) {

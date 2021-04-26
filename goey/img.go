@@ -3,11 +3,11 @@ package goey
 import (
 	"image"
 
-	"guitest/goey/base"
+	"clipster/goey/base"
 )
 
 var (
-	imgKind = base.NewKind("guitest/goey.Img")
+	imgKind = base.NewKind("clipster/goey.Img")
 )
 
 // Img describes a widget that contains a bitmap image.

@@ -3,7 +3,7 @@ package goey
 import (
 	"unsafe"
 
-	"guitest/goey/base"
+	"clipster/goey/base"
 	"github.com/lxn/win"
 )
 

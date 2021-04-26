@@ -1,11 +1,11 @@
 package goey
 
 import (
-	"guitest/goey/base"
+	"clipster/goey/base"
 )
 
 var (
-	textInputKind = base.NewKind("guitest/goey.TextInput")
+	textInputKind = base.NewKind("clipster/goey.TextInput")
 )
 
 // TextInput describes a widget that users input or update a single line of text.

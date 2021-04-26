@@ -10,10 +10,10 @@ import (
 	"image/color"
 	"image/draw"
 
-	"guitest/goey"
-	"guitest/goey/animate"
-	"guitest/goey/base"
-	"guitest/goey/loop"
+	"clipster/goey"
+	"clipster/goey/animate"
+	"clipster/goey/base"
+	"clipster/goey/loop"
 )
 
 var (

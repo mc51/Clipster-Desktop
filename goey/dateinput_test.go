@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"guitest/goey/base"
+	"clipster/goey/base"
 )
 
 func TestDateInputMount(t *testing.T) {

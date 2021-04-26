@@ -5,8 +5,8 @@ package goey
 import (
 	"image/color"
 
-	"guitest/goey/base"
-	"guitest/goey/internal/gtk"
+	"clipster/goey/base"
+	"clipster/goey/internal/gtk"
 )
 
 func toRGBA(c color.RGBA) uint {

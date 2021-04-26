@@ -21,7 +21,7 @@ static size_t _GoStringLen(_GoString_ s) { return (size_t)s.n; }
 __attribute__ ((unused))
 static const char *_GoStringPtr(_GoString_ s) { return s.p; }
 
-#line 3 "/home/mc/go/pkg/mod/guitest/goey@v0.8.0/internal/gtk/mc.go"
+#line 3 "/home/mc/go/pkg/mod/clipster/goey@v0.8.0/internal/gtk/mc.go"
 
 #include "mc.h"
 

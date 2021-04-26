@@ -20,9 +20,9 @@ import (
 	"os"
 	"strconv"
 
-	"guitest/goey"
-	"guitest/goey/base"
-	"guitest/goey/loop"
+	"clipster/goey"
+	"clipster/goey/base"
+	"clipster/goey/loop"
 )
 
 var (

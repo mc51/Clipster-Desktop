@@ -4,13 +4,13 @@
 // limited to support portability.  Additionally, styling of the controls
 // will be limited, with the look of controls matching the native platform.
 //
-// The minimal GUI example application is guitest/goey/example/onebutton,
+// The minimal GUI example application is clipster/goey/example/onebutton,
 // and additional example applications are in the example folder.
 //
 // Screenshots
 //
 // There are screenshots of some of the example applications linked in the
-// README, located at https://guitest/goey/src/default/README.md.
+// README, located at https://clipster/goey/src/default/README.md.
 //
 // Windows
 //

@@ -8,8 +8,8 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"guitest/goey/internal/cocoaloop"
-	"guitest/goey/internal/nopanic"
+	"clipster/goey/internal/cocoaloop"
+	"clipster/goey/internal/nopanic"
 	"gitlab.com/stone.code/assert"
 )
 

@@ -5,10 +5,10 @@ import (
 )
 
 func ExampleKind_String() {
-	kind := NewKind("guitest/goey/base.Example")
+	kind := NewKind("clipster/goey/base.Example")
 
 	fmt.Println("Kind is", kind.String())
 
 	// Output:
-	// Kind is guitest/goey/base.Example
+	// Kind is clipster/goey/base.Example
 }

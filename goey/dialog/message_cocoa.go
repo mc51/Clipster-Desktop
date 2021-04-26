@@ -3,7 +3,7 @@
 package dialog
 
 import (
-	"guitest/goey/internal/cocoa"
+	"clipster/goey/internal/cocoa"
 )
 
 func (m *Message) show() error {

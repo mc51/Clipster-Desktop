@@ -7,7 +7,7 @@ import (
 	"testing"
 	"testing/quick"
 
-	"guitest/goey/base"
+	"clipster/goey/base"
 )
 
 func ExampleButton() {

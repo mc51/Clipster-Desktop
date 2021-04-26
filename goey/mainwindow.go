@@ -9,8 +9,8 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"guitest/goey/base"
-	"guitest/goey/dialog"
+	"clipster/goey/base"
+	"clipster/goey/dialog"
 )
 
 var (

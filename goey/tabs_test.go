@@ -3,7 +3,7 @@ package goey
 import (
 	"testing"
 
-	"guitest/goey/base"
+	"clipster/goey/base"
 )
 
 func TestTabsMount(t *testing.T) {

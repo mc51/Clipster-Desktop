@@ -5,9 +5,9 @@ package goey
 import (
 	"time"
 
-	"guitest/goey/base"
-	"guitest/goey/internal/gtk"
-	"guitest/goey/loop"
+	"clipster/goey/base"
+	"clipster/goey/internal/gtk"
+	"clipster/goey/loop"
 )
 
 // Control is an opaque type used as a platform-specific handle to a control

@@ -3,7 +3,7 @@ package dialog
 import (
 	"testing"
 
-	"guitest/goey/loop"
+	"clipster/goey/loop"
 )
 
 func TestMain(m *testing.M) {

@@ -1,7 +1,7 @@
 package nopanic_test
 
 import (
-	"guitest/goey/internal/nopanic"
+	"clipster/goey/internal/nopanic"
 	"errors"
 	"fmt"
 	"reflect"
@@ -82,15 +82,15 @@ func ExampleUnwrap() {
 	// goroutine 1 [running]:
 	// runtime/debug.Stack(0x0, 0x0, 0xc04202b9c8)
 	//         C:/Go/src/runtime/debug/stack.go:24 +0x80
-	// guitest/goey/internal/nopanic.New(0x5190c0, 0xc04200cf30, 0xc04200cf30, 0xc04202ba78, 0x40ef6c, 0xc04200cf30)
-	//         guitest/goey/internal/nopanic/_test/_obj_test/nopanic.go:35 +0x33
-	// guitest/goey/internal/nopanic.Wrap.func1(0xc04202bb58)
-	//         guitest/goey/internal/nopanic/_test/_obj_test/nopanic.go:45 +0x71
+	// clipster/goey/internal/nopanic.New(0x5190c0, 0xc04200cf30, 0xc04200cf30, 0xc04202ba78, 0x40ef6c, 0xc04200cf30)
+	//         clipster/goey/internal/nopanic/_test/_obj_test/nopanic.go:35 +0x33
+	// clipster/goey/internal/nopanic.Wrap.func1(0xc04202bb58)
+	//         clipster/goey/internal/nopanic/_test/_obj_test/nopanic.go:45 +0x71
 	// panic(0x5190c0, 0xc04200cf30)
 	//         C:/Go/src/runtime/panic.go:489 +0x2dd
 	//     ... several frame omitted ...
 	// main.main()
-	//         guitest/goey/internal/nopanic/_test/_testmain.go:98 +0x201
+	//         clipster/goey/internal/nopanic/_test/_testmain.go:98 +0x201
 }
 
 func TestWrap(t *testing.T) {

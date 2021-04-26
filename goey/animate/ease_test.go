@@ -1,7 +1,7 @@
 package animate
 
 import (
-	"guitest/goey/base"
+	"clipster/goey/base"
 	"math/rand"
 	"reflect"
 	"testing"

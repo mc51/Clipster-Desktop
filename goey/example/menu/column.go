@@ -1,11 +1,11 @@
 package main
 
 import (
-	"guitest/goey/base"
+	"clipster/goey/base"
 )
 
 var (
-	columnKind = base.NewKind("guitest/goey/example/menu.Column")
+	columnKind = base.NewKind("clipster/goey/example/menu.Column")
 )
 
 // Column describes a layout widget that arranges its child widgets into a several columns.

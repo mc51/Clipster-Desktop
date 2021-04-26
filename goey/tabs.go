@@ -1,11 +1,11 @@
 package goey
 
 import (
-	"guitest/goey/base"
+	"clipster/goey/base"
 )
 
 var (
-	tabsKind = base.NewKind("guitest/goey.Tabs")
+	tabsKind = base.NewKind("clipster/goey.Tabs")
 )
 
 // Tabs describes a widget that shows a tabs.

@@ -1,7 +1,7 @@
 package animate
 
 import (
-	"guitest/goey/loop"
+	"clipster/goey/loop"
 	"errors"
 	"sync/atomic"
 	"time"

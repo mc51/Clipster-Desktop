@@ -1,11 +1,11 @@
 package goey
 
 import (
-	"guitest/goey/base"
+	"clipster/goey/base"
 )
 
 var (
-	sliderKind = base.NewKind("guitest/goey.Slider")
+	sliderKind = base.NewKind("clipster/goey.Slider")
 )
 
 // Slider describes a widget that users input or update a single real value.

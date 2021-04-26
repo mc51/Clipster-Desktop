@@ -1,11 +1,11 @@
 package main
 
 import (
-	"guitest/goey/base"
+	"clipster/goey/base"
 )
 
 var (
-	minsizedboxKind = base.NewKind("guitest/goey/example/feettometer.MinSizedBox")
+	minsizedboxKind = base.NewKind("clipster/goey/example/feettometer.MinSizedBox")
 )
 
 // MinSizedBox is a custom layout widget that sizes its child widget according

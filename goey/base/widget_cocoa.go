@@ -3,7 +3,7 @@
 package base
 
 import (
-	"guitest/goey/internal/cocoa"
+	"clipster/goey/internal/cocoa"
 )
 
 const (

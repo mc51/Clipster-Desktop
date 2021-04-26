@@ -5,8 +5,8 @@ package goey
 import (
 	"bytes"
 
-	"guitest/goey/base"
-	"guitest/goey/internal/gtk"
+	"clipster/goey/base"
+	"clipster/goey/internal/gtk"
 )
 
 type selectinputElement struct {

@@ -75,7 +75,7 @@ func (m *mockElement) UpdateProps(data Widget) error {
 }
 
 func TestCloseElements(t *testing.T) {
-	kind := NewKind("guitest/goey/base.Mock")
+	kind := NewKind("clipster/goey/base.Mock")
 
 	// Check for no panic on nil or zero-length list
 	CloseElements(nil)
@@ -98,8 +98,8 @@ func TestCloseElements(t *testing.T) {
 }
 
 func TestDiffChild(t *testing.T) {
-	kind1 := NewKind("guitest/goey/base.Mock1")
-	kind2 := NewKind("guitest/goey/base.Mock2")
+	kind1 := NewKind("clipster/goey/base.Mock1")
+	kind2 := NewKind("clipster/goey/base.Mock2")
 	err1 := errors.New("fake error 1 for mounting widget")
 	err2 := errors.New("fake error 2 for mounting widget")
 
@@ -153,8 +153,8 @@ func TestDiffChild(t *testing.T) {
 }
 
 func TestDiffChildren(t *testing.T) {
-	kind1 := NewKind("guitest/goey/base.Mock1")
-	kind2 := NewKind("guitest/goey/base.Mock2")
+	kind1 := NewKind("clipster/goey/base.Mock1")
+	kind2 := NewKind("clipster/goey/base.Mock2")
 	err1 := errors.New("fake error 1 for mounting widget")
 	err2 := errors.New("fake error 2 for mounting widget")
 

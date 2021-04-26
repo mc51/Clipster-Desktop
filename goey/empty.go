@@ -1,11 +1,11 @@
 package goey
 
 import (
-	"guitest/goey/base"
+	"clipster/goey/base"
 )
 
 var (
-	emptyKind = base.NewKind("guitest/goey.Empty")
+	emptyKind = base.NewKind("clipster/goey.Empty")
 )
 
 // Empty describes a widget that is either a horizontal or vertical gap.

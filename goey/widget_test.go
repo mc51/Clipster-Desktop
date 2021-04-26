@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"guitest/goey/base"
-	"guitest/goey/loop"
+	"clipster/goey/base"
+	"clipster/goey/loop"
 )
 
 type Proper interface {

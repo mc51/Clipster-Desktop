@@ -1,12 +1,12 @@
 package goey
 
 import (
-	"guitest/goey/base"
+	"clipster/goey/base"
 	"time"
 )
 
 var (
-	dateInputKind = base.NewKind("guitest/goey.DateInput")
+	dateInputKind = base.NewKind("clipster/goey.DateInput")
 )
 
 // DateInput describes a widget that users input or update a single date.

@@ -3,8 +3,8 @@
 package goey
 
 import (
-	"guitest/goey/base"
-	"guitest/goey/internal/cocoa"
+	"clipster/goey/base"
+	"clipster/goey/internal/cocoa"
 )
 
 type decorationElement struct {

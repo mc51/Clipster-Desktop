@@ -5,10 +5,10 @@ package main
 import (
 	"fmt"
 
-	"guitest/goey"
-	"guitest/goey/base"
-	"guitest/goey/dialog"
-	"guitest/goey/loop"
+	"clipster/goey"
+	"clipster/goey/base"
+	"clipster/goey/dialog"
+	"clipster/goey/loop"
 )
 
 var (

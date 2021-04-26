@@ -1,8 +1,8 @@
 package icons
 
 import (
-	"guitest/goey"
-	"guitest/goey/base"
+	"clipster/goey"
+	"clipster/goey/base"
 	"github.com/golang/freetype/truetype"
 	"golang.org/x/image/font"
 )
@@ -11,7 +11,7 @@ import (
 type Icon rune
 
 var (
-	kind   = base.NewKind("guitest/goey/icons.Icon")
+	kind   = base.NewKind("clipster/goey/icons.Icon")
 	assets struct {
 		font *truetype.Font
 		face font.Face

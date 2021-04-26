@@ -6,8 +6,8 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"guitest/goey/internal/gtkloop"
-	"guitest/goey/internal/nopanic"
+	"clipster/goey/internal/gtkloop"
+	"clipster/goey/internal/nopanic"
 )
 
 const (

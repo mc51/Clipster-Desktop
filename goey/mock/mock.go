@@ -1,11 +1,11 @@
 package mock
 
 import (
-	"guitest/goey/base"
+	"clipster/goey/base"
 )
 
 var (
-	mockKind = base.NewKind("guitest/goey/mock.Widget")
+	mockKind = base.NewKind("clipster/goey/mock.Widget")
 )
 
 // New returns a new mock element.
