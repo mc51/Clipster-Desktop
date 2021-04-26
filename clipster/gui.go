@@ -28,7 +28,6 @@ func ShowNotification(title string, body string) {
 func StartGUIInBackground() {
 	// For GTK
 	log.Println("StartGui")
-	os.Setenv("GOEY_SIZE", "300x300") // MainWindows size
 	err := loop.Run(createHiddenWindow)
 	if err != nil {
 		log.Fatalln("Error:", err)
@@ -39,7 +38,6 @@ func StartGUIInBackground() {
 func StartGUIInForeground() {
 	// For Windows
 	log.Println("StartGui")
-	os.Setenv("GOEY_SIZE", "300x300") // MainWindows size
 	err := loop.Run(GUIAskForCredentials)
 	if err != nil {
 		log.Fatalln("Error:", err)
@@ -62,6 +60,7 @@ func createHiddenWindow() error {
 
 func GUIAskForCredentials() error {
 	log.Println("GUIAskForCredentials")
+	os.Setenv("GOEY_SIZE", "300x300")
 	w, err := goey.NewWindow("Clipster – Enter Credentials", renderCredsWindow())
 	if err != nil {
 		return err
@@ -78,6 +77,7 @@ func GUIAskForCredentials() error {
 
 func GUIShowClips(clips []string) error {
 	log.Println("GUIShowClips")
+	os.Setenv("GOEY_SIZE", "600x100")
 	w, err := goey.NewWindow("Clipster – Your Clips", renderShowClipsWindows(clips))
 	if err != nil {
 		return err
@@ -130,7 +130,7 @@ func DownloadLastClipFlow() {
 	log.Println("DownloadLastClipFlow")
 	clips_ecrypted, err := APIDownloadAllClips()
 	if err != nil {
-		mainWindow.Message(err.Error()).WithError().Show()
+		ShowNotification("Clipster - Error", err.Error())
 		log.Println("Error:", err)
 		return
 	}
@@ -146,7 +146,7 @@ func DownloadAllClipsFlow() {
 	// display result in gui
 	clips_ecrypted, err := APIDownloadAllClips()
 	if err != nil {
-		mainWindow.Message(err.Error()).WithError().Show()
+		ShowNotification("Clipster - Error", err.Error())
 		log.Println("Error:", err)
 		return
 	}
@@ -279,20 +279,30 @@ func renderCredsWindow() base.Widget {
 
 func renderShowClipsWindows(clips []string) base.Widget {
 	// renderShowClipsWindows renders goey Window showing downloaded Clips
+	// allows user to copy text using shortcut or by clicking into text field
+	// and using the button
+	var id_selected int
 	widgets := []base.Widget{
-		&goey.Label{Text: "Here are your Clips:"},
+		&goey.Label{Text: "Your shared Clips:"},
 	}
 
-	for _, v := range clips {
-		widgets = append(widgets, &goey.TextInput{Value: v,
-			OnChange:   func(v string) { println("text input ", v) },
-			OnEnterKey: func(v string) { println("t1* ", v) }})
+	for i, v := range clips {
+		j := i
+		widgets = append(widgets, &goey.TextArea{Value: v,
+			ReadOnly: true,
+			MinLines: 3,
+			OnFocus: func() {
+				id_selected = j
+			}})
 	}
 
 	widgets = append(widgets, &goey.HBox{
 		Children: []base.Widget{
-			&goey.Button{Text: "Copy to Clipboatd", OnClick: func() {
+			&goey.Button{Text: "Copy to Clipboard", OnClick: func() {
 				fmt.Println("Copy to Clipboard")
+				SetClipboard(clips[id_selected])
+				ShowNotification("Clipster - Copied to clipboard", clips[id_selected])
+				mainWindow.Close()
 			}},
 			&goey.Button{Text: "Cancel", OnClick: func() { mainWindow.Close() }}},
 		AlignMain: goey.MainStart,
