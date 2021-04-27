@@ -4,6 +4,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 	"runtime"
 	"time"
 
@@ -51,7 +52,7 @@ func startGui(finish chan bool) {
 
 func onReady() {
 	fmt.Println("On Ready")
-	tray.SetIcon(clipster.ReadIconAsBytesFromFile(clipster.ICON_FILENAME))
+	tray.SetIcon(clipster.ICON_BYTES)
 	tray.SetTitle("Clipster")
 	tray.SetTooltip("Clipster")
 	// We can manipulate the tray in other goroutines
@@ -80,7 +81,7 @@ func onReady() {
 				clipster.ShowEditCredsGUI()
 			case <-mQuit.ClickedCh:
 				log.Println("Quit")
-				tray.Quit()
+				onExit()
 				return
 			}
 		}
@@ -88,5 +89,9 @@ func onReady() {
 }
 
 func onExit() {
+	// Remove temp icon file
+	if err := os.Remove(clipster.ICON_FILENAME); err != nil {
+		log.Println("Error: deleting temp file", err)
+	}
 	tray.Quit()
 }

@@ -2,6 +2,10 @@
 package clipster
 
 import (
+	"bytes"
+	"image"
+	"image/png"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -18,7 +22,6 @@ const CONFIG_TYPE = "yaml"
 
 const HOST_DEFAULT string = "https://clipster.cc"
 const RE_HOSTNAME string = `^(https):\/\/[^\s\/$.?#].[^\s]*|://localhost:|://127.0.0.1:|^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$`
-const ICON_FILENAME = "assets/clipster_icon_128.png"
 
 const API_URI_COPY_PASTE = "/copy-paste/"
 const API_URI_REGISTER = "/register/"
@@ -38,10 +41,33 @@ type Config struct {
 	Disable_ssl_cert_check bool
 }
 
-var conf Config
+var (
+	conf          Config
+	ICON_FILENAME string
+)
 
 func init() {
+	// init prepares the config paths and an icon temp file
 	initConfigPaths()
+
+	// writes icon file to a temp file for usage in notifications
+	tmpFile, err := ioutil.TempFile(os.TempDir(), "clipster_")
+	if err != nil {
+		log.Panicln("Error: Cannot create icon file", err)
+	}
+	log.Println("Created icon file: " + tmpFile.Name())
+
+	m, _, err := image.Decode(bytes.NewReader(ICON_BYTES))
+	if err != nil {
+		log.Panicln("Error:", err)
+	}
+
+	err = png.Encode(tmpFile, m)
+	if err != nil {
+		log.Panicln(err)
+	}
+	ICON_FILENAME = string(tmpFile.Name())
+
 }
 
 func OpenConfigFile() (bool, error) {

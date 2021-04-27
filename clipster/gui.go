@@ -65,7 +65,7 @@ func GUIAskForCredentials() error {
 	if err != nil {
 		return err
 	}
-	icon, err := ReadIconAsImageFromFile(ICON_FILENAME)
+	icon, err := IconAsImageFromBytes(ICON_BYTES)
 	if err != nil {
 		return err
 	}
@@ -82,7 +82,7 @@ func GUIShowClips(clips []string) error {
 	if err != nil {
 		return err
 	}
-	icon, err := ReadIconAsImageFromFile(ICON_FILENAME)
+	icon, err := IconAsImageFromBytes(ICON_BYTES)
 	if err != nil {
 		return err
 	}

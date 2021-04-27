@@ -2,42 +2,19 @@
 package clipster
 
 import (
-	"encoding/base64"
+	"bytes"
 	"errors"
 	"image"
 	"log"
-	"os"
 	"regexp"
 	"strings"
 )
 
-func ReadIconAsB64FromFile(filename string) string {
-	// ReadIconAsB64FromFile reads file content and returns it
-	// as base64 encoded string
-	bytes, err := os.ReadFile(filename)
+func IconAsImageFromBytes(img []byte) (image.Image, error) {
+	// IconAsImageFromBytes read image from bytes and returns image
+	m, _, err := image.Decode(bytes.NewReader(img))
 	if err != nil {
-		log.Fatal(err)
-	}
-	icon_b64 := base64.StdEncoding.EncodeToString(bytes)
-	return icon_b64
-}
-
-func ReadIconAsBytesFromFile(filename string) []byte {
-	// ReadIconAsBytesFromFile reads file content and returns it as bytes
-	bytes, err := os.ReadFile(filename)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return bytes
-}
-
-func ReadIconAsImageFromFile(filename string) (image.Image, error) {
-	// ReadIconAsImageFromFile read file content and returns image type
-	icon_b64 := ReadIconAsB64FromFile(filename)
-	reader := base64.NewDecoder(base64.StdEncoding, strings.NewReader(icon_b64))
-	m, _, err := image.Decode(reader)
-	if err != nil {
-		log.Println("Error:", err)
+		log.Panicln("Error:", err)
 	}
 	return m, err
 }
