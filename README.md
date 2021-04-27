@@ -20,13 +20,13 @@ There is  an alternative [Clipster-Desktop](https://github.com/mc51/Clipster-Des
 
 Download [`clipster`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster) from the latest Linux release and start it. To have Clipster auto start, add it to `Application Autostart`.
 
-### Windows
+### Windows (coming soon...)
 
-Download [`clipster.exe`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster.exe) from the latest Windows release and start it. To have Clipster auto start, open the current user's auto-start folder by opening Explorer and typing `shell:startup`. Copy `clipster.exe` there. 
+Download _ from the latest Windows release and start it. To have Clipster auto start, open the current user's auto-start folder by opening Explorer and typing `shell:startup`. Copy `clipster.exe` there. 
 
-### MacOS
+### MacOS (coming soon...)
 
-Download [`clipster.zip`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster.zip) from the latest MacOS release, move it to `Applications` and start it. You might get a warning message, that you need to ignore. Newer MacOS versions might even prevent you from opening it entirely at first. You have [two options](https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unidentified-developer-mh40616/mac):  
+Download _ from the latest MacOS release, move it to `Applications` and start it. You might get a warning message, that you need to ignore. Newer MacOS versions might even prevent you from opening it entirely at first. You have [two options](https://support.apple.com/guide/mac-help/open-a-mac-app-from-an-unidentified-developer-mh40616/mac):  
 1. Open it in the Finder via `right click --> open`
 2. After failing to open it, go to `System Preferences --> Security & Privacy`. In the `General` Tab the App will be listed and you can start it from there  
   
@@ -42,7 +42,7 @@ Clipster will add an Icon to your system tray which you can click for opening up
 `Get all Clips` will fetch all shared Clips from the server and display them to you.  
 `Share Clip` will share your current clipboard. Then, it's available for all your devices.  
 `Edit Credentials` allows you to register a new account or change your login credentials.  
-`Exit` will terminate the app.  
+`Quit` will terminate the app.  
 
 ## Roadmap
 
@@ -50,7 +50,6 @@ Clipster will add an Icon to your system tray which you can click for opening up
 - [x] Add clipboard history: share multiple Clips
 - [x] Add PyPi package
 - [ ] Support image sharing
-- [ ] iOS Client  
   
 ## Contributions
 
