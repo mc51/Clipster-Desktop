@@ -57,7 +57,7 @@ func init() {
 	}
 	log.Println("Created icon file: " + tmpFile.Name())
 
-	m, _, err := image.Decode(bytes.NewReader(ICON_BYTES))
+	m, _, err := image.Decode(bytes.NewReader(ICON_PNG_BYTES))
 	if err != nil {
 		log.Panicln("Error:", err)
 	}

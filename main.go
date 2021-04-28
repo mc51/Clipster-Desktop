@@ -54,7 +54,7 @@ func startGui(finish chan bool) {
 
 func onReady() {
 	fmt.Println("On Ready")
-	tray.SetIcon(clipster.ICON_BYTES)
+	tray.SetIcon(clipster.ICON_TRAY_BYTES)
 	tray.SetTitle("Clipster")
 	tray.SetTooltip("Clipster")
 	// We can manipulate the tray in other goroutines
