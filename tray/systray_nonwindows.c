@@ -1,3 +1,4 @@
+// +build !windows
 // Adapted from original https://github.com/getlantern/systray/
 
 #include <stdlib.h>

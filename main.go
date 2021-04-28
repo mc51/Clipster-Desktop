@@ -17,22 +17,24 @@ func main() {
 	finish := make(chan bool)
 	go startGui(finish)
 	go func() {
-		for loop.IsRunning == 0 {
-			time.Sleep(200 * time.Millisecond)
-			log.Println("Waiting for GTK loop to start...")
+		if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
+			for loop.IsRunning == 0 {
+				time.Sleep(200 * time.Millisecond)
+				log.Println("Waiting for GTK loop to start...")
+			}
+			log.Printf("GTK loop started... Checking for config")
 		}
-		log.Printf("GTK loop started... Checking for config")
 		ok, err := clipster.OpenConfigFile()
 		if !ok {
 			log.Println("Error:", err)
 			clipster.ShowEditCredsGUI()
-			log.Println("After Show Gui")
 		} else {
 			creds, _ := clipster.LoadConfigFromFile()
 			log.Printf("%+v", creds)
 		}
 	}()
 	<-finish
+
 }
 
 func startGui(finish chan bool) {
