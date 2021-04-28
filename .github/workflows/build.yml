@@ -50,7 +50,7 @@ jobs:
           #   ASSET_MIME: application/zip
           - os: windows-latest
             TARGET: windows
-            CMD_BUILD: go mod tidy && go build -o build/clipster
+            CMD_BUILD: go mod tidy && go build -o build/clipster.exe
             OUT_FILE_NAME: clipster.exe
             ASSET_MIME: application/vnd.microsoft.portable-executable
     steps:

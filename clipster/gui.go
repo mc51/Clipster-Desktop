@@ -140,6 +140,7 @@ func DownloadLastClipFlow() {
 	ShowNotification("Clipster – Got new clip", clip_decrypted)
 }
 
+// TODO: Fix for Windows -> GUI not started
 func DownloadAllClipsFlow() {
 	// DownloadAllClipsFlow downloads all clips as json from API
 	// unencrypts the encrypted texts
