@@ -62,7 +62,7 @@ jobs:
       uses: actions/checkout@v2
     - name: Resolve dependencies for ${{matrix.TARGET}}
       run: ${{matrix.CMD_RESOLVE_DEPS}}
-      if: runner.os == "Linux"
+      if: runner.os == 'Linux'
     - name: Build Go for ${{matrix.TARGET}}
       run: ${{matrix.CMD_BUILD}}
     - name: Load Release URL File from release job
