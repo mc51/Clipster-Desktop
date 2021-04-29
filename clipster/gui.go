@@ -35,16 +35,6 @@ func StartGUIInBackground() {
 	log.Println("End StartGUIInBackground")
 }
 
-func StartGUIInForeground() {
-	// For Windows
-	log.Println("StartGui")
-	err := loop.Run(GUIAskForCredentials)
-	if err != nil {
-		log.Fatalln("Error:", err)
-	}
-	log.Println("End StartGUIInForeground")
-}
-
 func createHiddenWindow() error {
 	// createHiddenWindow keeps GTK main loop running without showing a window
 	// to keep tray icon available
@@ -97,8 +87,13 @@ func ShowEditCredsGUI() {
 		// need to run on main Thread (=GUI Thread)
 		loop.Do(GUIAskForCredentials)
 	} else if runtime.GOOS == "windows" {
-		// can run separately
-		StartGUIInForeground()
+		loop.Do(GUIAskForCredentials)
+		// // can run separately
+		// log.Println("StartGui")
+		// err := loop.Run(GUIAskForCredentials)
+		// if err != nil {
+		// 	log.Fatalln("Error:", err)
+		// }
 	}
 }
 
