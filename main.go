@@ -48,7 +48,6 @@ func startGui(finish chan bool) {
 	} else if runtime.GOOS == "windows" {
 		// On Win GUIs can run on non-main thread. tray gets own thread
 		tray.Run(onReady, onExit)
-		clipster.StartGUIInBackground()
 	}
 	close(finish)
 }

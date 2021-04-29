@@ -83,17 +83,16 @@ func GUIShowClips(clips []string) error {
 }
 
 func ShowEditCredsGUI() {
+	log.Println("ShowEditCredsGUI")
 	if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
 		// need to run on main Thread (=GUI Thread)
 		loop.Do(GUIAskForCredentials)
 	} else if runtime.GOOS == "windows" {
-		loop.Do(GUIAskForCredentials)
-		// // can run separately
-		// log.Println("StartGui")
-		// err := loop.Run(GUIAskForCredentials)
-		// if err != nil {
-		// 	log.Fatalln("Error:", err)
-		// }
+		// can run separately
+		err := loop.Run(GUIAskForCredentials)
+		if err != nil {
+			log.Panicln("Error:", err)
+		}
 	}
 }
 
@@ -154,7 +153,15 @@ func DownloadAllClipsFlow() {
 	}
 
 	f := func() error { return GUIShowClips(clips_decrypted) }
-	loop.Do(f)
+	if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
+		loop.Do(f)
+	} else if runtime.GOOS == "windows" {
+		// can run separately
+		err := loop.Run(f)
+		if err != nil {
+			log.Panicln("Error:", err)
+		}
+	}
 }
 
 func register_flow(host string, user string, pw string, ssl_disable bool) {
