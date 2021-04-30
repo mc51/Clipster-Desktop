@@ -93,7 +93,7 @@ func guiDo(f func() error) {
 		}
 	} else if runtime.GOOS == "windows" {
 		// start new thread for f
-		err := loop.Run(GUIAskForCredentials)
+		err := loop.Run(f)
 		if err != nil {
 			log.Panicln("Error:", err)
 		}
