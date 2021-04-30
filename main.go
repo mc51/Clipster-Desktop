@@ -5,33 +5,31 @@ import (
 	"log"
 	"os"
 	"runtime"
-	"time"
 
 	"clipster/clipster"
-	"clipster/goey/loop"
 	"clipster/tray"
 )
 
 func main() {
 	finish := make(chan bool)
 	go startGui(finish)
-	go func() {
-		if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
-			for loop.IsRunning == 0 {
-				time.Sleep(200 * time.Millisecond)
-				log.Println("Waiting for GTK loop to start...")
-			}
-			log.Printf("GTK loop started... Checking for config")
-		}
-		ok, err := clipster.OpenConfigFile()
-		if !ok {
-			log.Println("Error:", err)
-			clipster.ShowEditCredsGUI()
-		} else {
-			conf, _ := clipster.LoadConfigFromFile()
-			log.Printf("%+v", conf)
-		}
-	}()
+	// go func() {
+	// 	if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
+	// 		for loop.IsRunning == 0 {
+	// 			time.Sleep(200 * time.Millisecond)
+	// 			log.Println("Waiting for GTK loop to start...")
+	// 		}
+	// 		log.Printf("GTK loop started... Checking for config")
+	// 	}
+	// 	ok, err := clipster.OpenConfigFile()
+	// 	if !ok {
+	// 		log.Println("Error:", err)
+	// 		clipster.ShowEditCredsGUI()
+	// 	} else {
+	// 		conf, _ := clipster.LoadConfigFromFile()
+	// 		log.Printf("%+v", conf)
+	// 	}
+	// }()
 	<-finish
 }
 
@@ -40,7 +38,7 @@ func startGui(finish chan bool) {
 	if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
 		// On linux and macos all GUIs must run on main thead. We use GTK for tray and goey
 		// Both must be run in same loop, locked to main thread
-		// tray.Register(onReady, onExit)
+		tray.Register(onReady, onExit)
 		// Start gtk loop without displaying window (to show tray)
 		clipster.StartGUIInBackground()
 	} else if runtime.GOOS == "windows" {
