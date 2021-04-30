@@ -40,7 +40,7 @@ func startGui(finish chan bool) {
 	if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
 		// On linux and macos all GUIs must run on main thead. We use GTK for tray and goey
 		// Both must be run in same loop, locked to main thread
-		tray.Register(onReady, onExit)
+		// tray.Register(onReady, onExit)
 		// Start gtk loop without displaying window (to show tray)
 		clipster.StartGUIInBackground()
 	} else if runtime.GOOS == "windows" {
