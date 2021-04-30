@@ -108,7 +108,7 @@ func WriteConfigFile(c Config) {
 		viper.Set(typeOfS.Field(i).Name, v.Field(i).Interface())
 	}
 	if err := viper.WriteConfigAs(CONFIG_FILEPATH); err != nil {
-		log.Fatalln("Error:", err)
+		log.Panicln("Error:", err)
 	}
 }
 
@@ -118,7 +118,7 @@ func initConfigPaths() {
 	log.Printf("initConfigPaths")
 	homedir, err := os.UserHomeDir()
 	if err != nil {
-		log.Fatalln("Error:", err)
+		log.Panicln("Error:", err)
 	}
 
 	CONFIG_PATHS[0] = filepath.Join(homedir, ".config", "clipster")
@@ -136,7 +136,7 @@ func initConfigPaths() {
 	log.Println("Error: No config file folder exists")
 	log.Println("Creating config file folder", CONFIG_PATHS[0])
 	if err := os.MkdirAll(CONFIG_PATHS[0], 0775); err != nil {
-		log.Fatal(err)
+		log.Panicln(err)
 		return
 	}
 	CONFIG_FILEPATH = CONFIG_PATHS[0] + string(os.PathSeparator) + CONFIG_FILENAME

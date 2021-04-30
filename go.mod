@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/fernet/fernet-go v0.0.0-20191111064656-eff2850e6001
+	github.com/fsnotify/fsnotify v1.4.7
 	github.com/gen2brain/beeep v0.0.0-20200526185328-e9c15c258e28
 	github.com/getlantern/golog v0.0.0-20201105130739-9586b8bde3a9
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0

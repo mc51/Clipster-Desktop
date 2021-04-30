@@ -82,18 +82,27 @@ func GUIShowClips(clips []string) error {
 	return nil
 }
 
-func ShowEditCredsGUI() {
-	log.Println("ShowEditCredsGUI")
+func guiDo(f func() error) {
+	// guiDo runs a GUI function on the appropriate thread depending on the os
+	log.Println("guiDo")
 	if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
-		// need to run on main Thread (=GUI Thread)
-		loop.Do(GUIAskForCredentials)
+		// run f on main (GUI) thread
+		err := loop.Do(f)
+		if err != nil {
+			log.Panicln("Error:", err)
+		}
 	} else if runtime.GOOS == "windows" {
-		// can run separately
+		// start new thread for f
 		err := loop.Run(GUIAskForCredentials)
 		if err != nil {
 			log.Panicln("Error:", err)
 		}
 	}
+}
+
+func ShowEditCredsGUI() {
+	log.Println("ShowEditCredsGUI")
+	guiDo(GUIAskForCredentials)
 }
 
 // func updateWindow() {
@@ -134,7 +143,6 @@ func DownloadLastClipFlow() {
 	ShowNotification("Clipster – Got new clip", clip_decrypted)
 }
 
-// TODO: Fix for Windows -> GUI not started
 func DownloadAllClipsFlow() {
 	// DownloadAllClipsFlow downloads all clips as json from API
 	// unencrypts the encrypted texts
@@ -153,17 +161,12 @@ func DownloadAllClipsFlow() {
 	}
 
 	f := func() error { return GUIShowClips(clips_decrypted) }
-	if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
-		loop.Do(f)
-	} else if runtime.GOOS == "windows" {
-		// can run separately
-		err := loop.Run(f)
-		if err != nil {
-			log.Panicln("Error:", err)
-		}
-	}
+	guiDo(f)
 }
 
+// TODO: Windows: On first login / register creds not available to Tray functions
+// prob because run on different threads ->
+// 1. either load config before every onReady action 2. Use Config Watcher for Viper to make sure creds are loaded
 func register_flow(host string, user string, pw string, ssl_disable bool) {
 	// register_flow check for completeness of creds
 	// creates hash from them
@@ -187,8 +190,7 @@ func register_flow(host string, user string, pw string, ssl_disable bool) {
 		return
 	}
 	hash_msg := GetMsgHashFromPw(user, pw)
-	// TODO: get checkbox value
-	conf := Config{host, user, hash_login, hash_msg, ssl_disable}
+	conf = Config{host, user, hash_login, hash_msg, ssl_disable}
 	WriteConfigFile(conf)
 	log.Println("Ok: Registration flow completed")
 	mainWindow.Message("Registration successfull\nCredentials saved to config:\n" + CONFIG_FILEPATH).WithInfo().Show()
@@ -218,8 +220,7 @@ func login_flow(host string, user string, pw string, ssl_disable bool) {
 		return
 	}
 	hash_msg := GetMsgHashFromPw(user, pw)
-	// TODO: get checkbox value
-	conf := Config{host, user, hash_login, hash_msg, ssl_disable}
+	conf = Config{host, user, hash_login, hash_msg, ssl_disable}
 	WriteConfigFile(conf)
 	log.Println("Ok: login workflow completed")
 	mainWindow.Message("Login successfull\nCredentials saved to config:\n" + CONFIG_FILEPATH).WithInfo().Show()

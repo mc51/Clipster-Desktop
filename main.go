@@ -2,7 +2,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"runtime"
@@ -29,12 +28,11 @@ func main() {
 			log.Println("Error:", err)
 			clipster.ShowEditCredsGUI()
 		} else {
-			creds, _ := clipster.LoadConfigFromFile()
-			log.Printf("%+v", creds)
+			conf, _ := clipster.LoadConfigFromFile()
+			log.Printf("%+v", conf)
 		}
 	}()
 	<-finish
-
 }
 
 func startGui(finish chan bool) {
@@ -43,7 +41,7 @@ func startGui(finish chan bool) {
 		// On linux and macos all GUIs must run on main thead. We use GTK for tray and goey
 		// Both must be run in same loop, locked to main thread
 		tray.Register(onReady, onExit)
-		// Start gtk loop without displaying window (just tray)
+		// Start gtk loop without displaying window (to show tray)
 		clipster.StartGUIInBackground()
 	} else if runtime.GOOS == "windows" {
 		// On Win GUIs can run on non-main thread. tray gets own thread
@@ -53,7 +51,7 @@ func startGui(finish chan bool) {
 }
 
 func onReady() {
-	fmt.Println("On Ready")
+	log.Println("On Ready")
 	tray.SetIcon(clipster.ICON_TRAY_BYTES)
 	tray.SetTitle("Clipster")
 	tray.SetTooltip("Clipster")
