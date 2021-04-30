@@ -2,6 +2,7 @@ package loop
 
 import (
 	"errors"
+	"log"
 	"os"
 	"runtime"
 	"sync/atomic"
@@ -50,8 +51,10 @@ func Run(action func() error) error {
 		atomic.StoreUint32(&IsRunning, 0)
 	}()
 
+	log.Println("Locking to Main Thread")
 	// Pin the GUI message loop to a single thread
 	runtime.LockOSThread()
+	log.Println("Locked to Main Thread")
 	// The following deferred call to UnlockOSThread works fine on WIN32 and
 	// on Linux, where it is paired with the above LockOSThread.  It would
 	// also work with GNUstep on Go 1.10, where the behaviour of this pair
