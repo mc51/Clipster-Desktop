@@ -164,9 +164,6 @@ func DownloadAllClipsFlow() {
 	guiDo(f)
 }
 
-// TODO: Windows: On first login / register creds not available to Tray functions
-// prob because run on different threads ->
-// 1. either load config before every onReady action 2. Use Config Watcher for Viper to make sure creds are loaded
 func register_flow(host string, user string, pw string, ssl_disable bool) {
 	// register_flow check for completeness of creds
 	// creates hash from them
