@@ -1,4 +1,4 @@
-// +build cocoa darwin,!gtk
+// +build gtk,darwin
 
 package loop
 
@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"clipster/goey/internal/cocoaloop"
+	"clipster/goey/internal/gtkloop"
 	"clipster/goey/internal/nopanic"
 	"gitlab.com/stone.code/assert"
 )
@@ -32,9 +33,9 @@ func init() {
 func initRun() error {
 	cocoaInit.Do(func() {
 		assert.Assert(cocoa.IsMainThread(), "Not main thread")
-		cocoa.Init()
+		// cocoa.Init()
+		gtkloop.Init()
 	})
-
 	return nil
 }
 
@@ -44,7 +45,9 @@ func terminateRun() {
 
 func run() {
 	assert.Assert(cocoa.IsMainThread(), "Not main thread")
-	cocoa.Run()
+	// cocoa.Run()
+	// Start the GTK loop.
+	gtkloop.Run()
 }
 
 func runTesting(action func() error) error {
@@ -57,7 +60,8 @@ func do(action func() error) error {
 }
 
 func stop() {
-	cocoa.Stop()
+	// cocoa.Stop()
+	gtkloop.Stop()
 }
 
 func testMain(m *testing.M) int {
