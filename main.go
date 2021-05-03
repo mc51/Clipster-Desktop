@@ -10,11 +10,15 @@ import (
 	"clipster/clipster"
 	"clipster/goey/loop"
 	"clipster/tray"
+
+	"github.com/faiface/mainthread"
 )
 
-func main() {
+func run() {
+	// now we can run stuff on the main thread like this
 	finish := make(chan bool)
-	go startGui(finish)
+	mainthread.Call(func() { go startGui(finish) })
+
 	go func() {
 		if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
 			for loop.IsRunning == 0 {
@@ -33,6 +37,10 @@ func main() {
 		}
 	}()
 	<-finish
+}
+
+func main() {
+	mainthread.Run(run) // enables mainthread package and runs run in a separate goroutine
 }
 
 func startGui(finish chan bool) {

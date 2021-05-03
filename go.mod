@@ -3,6 +3,7 @@ module clipster
 go 1.16
 
 require (
+	github.com/faiface/mainthread v0.0.0-20171120011319-8b78f0a41ae3
 	github.com/fernet/fernet-go v0.0.0-20191111064656-eff2850e6001
 	github.com/gen2brain/beeep v0.0.0-20200526185328-e9c15c258e28
 	github.com/getlantern/golog v0.0.0-20201105130739-9586b8bde3a9
