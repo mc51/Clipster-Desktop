@@ -38,11 +38,11 @@ jobs:
         go-version: [1.16.x]
         os: [ubuntu-latest, windows-latest]
         include:
-          # - os: macos-latest
-          #   TARGET: macos
-          #   CMD_BUILD: go mod tidy && go build -o build/clipster
-          #   OUT_FILE_NAME: clipster.zip
-          #   ASSET_MIME: application/zip
+          - os: macos-latest
+            TARGET: macos
+            CMD_BUILD: go mod tidy && go build -o build/clipster.app/Contents/MacOS/clipster-bin && cd build/ && zip -r9 clipster clipster.app/
+            OUT_FILE_NAME: clipster.zip
+            ASSET_MIME: application/zip
           - os: ubuntu-latest
             TARGET: linux
             CMD_RESOLVE_DEPS: sudo apt-get update && sudo apt-get -y install libgtk-3-dev
