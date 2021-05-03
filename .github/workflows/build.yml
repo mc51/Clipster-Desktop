@@ -40,20 +40,21 @@ jobs:
         include:
           - os: macos-latest
             TARGET: macos
-            CMD_BUILD: go mod tidy && go build -o build/clipster.app/Contents/MacOS/clipster-bin && cd build/ && zip -r9 clipster clipster.app/
+            CMD_RESOLVE_DEPS: brew install gtk+3
+            CMD_BUILD: go mod tidy && go build --tags gtk -o build/clipster.app/Contents/MacOS/clipster-bin && cd build/ && zip -r9 clipster clipster.app/
             OUT_FILE_NAME: clipster.zip
             ASSET_MIME: application/zip
-          - os: ubuntu-latest
-            TARGET: linux
-            CMD_RESOLVE_DEPS: sudo apt-get update && sudo apt-get -y install libgtk-3-dev
-            CMD_BUILD: go mod tidy && go build -o build/clipster
-            OUT_FILE_NAME: clipster
-            ASSET_MIME: application/octet-stream
-          - os: windows-latest
-            TARGET: windows
-            CMD_BUILD: go mod tidy && go build -o build/clipster.exe
-            OUT_FILE_NAME: clipster.exe
-            ASSET_MIME: application/vnd.microsoft.portable-executable
+          # - os: ubuntu-latest
+          #   TARGET: linux
+          #   CMD_RESOLVE_DEPS: sudo apt-get update && sudo apt-get -y install libgtk-3-dev
+          #   CMD_BUILD: go mod tidy && go build -o build/clipster
+          #   OUT_FILE_NAME: clipster
+          #   ASSET_MIME: application/octet-stream
+          # - os: windows-latest
+          #   TARGET: windows
+          #   CMD_BUILD: go mod tidy && go build -o build/clipster.exe
+          #   OUT_FILE_NAME: clipster.exe
+          #   ASSET_MIME: application/vnd.microsoft.portable-executable
     steps:
     - name: Install Go
       uses: actions/setup-go@v2
