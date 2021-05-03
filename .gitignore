@@ -1,12 +1,12 @@
 # Binaries for programs and plugins
-build/
-!build/clipster.app/
+*.dylib
+!build/clipster.app/*
+!build/clipster.app/Contents/Resources/lib/*.dylib
 .DS_Store
 *.exe
 *.exe~
 *.dll
 *.so
-*.dylib
 *.sh
 # Test binary, built with `go test -c`
 *.test
