@@ -1,5 +1,5 @@
 # Binaries for programs and plugins
-build/
+.DS_Store
 *.exe
 *.exe~
 *.dll
