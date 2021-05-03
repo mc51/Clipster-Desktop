@@ -17,7 +17,7 @@ import (
 func run() {
 	// now we can run stuff on the main thread like this
 	finish := make(chan bool)
-	mainthread.Call(func() { go startGui(finish) })
+	mainthread.Call(func() { startGui(finish) })
 
 	go func() {
 		if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
