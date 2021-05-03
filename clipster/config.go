@@ -2,6 +2,10 @@
 package clipster
 
 import (
+	"bytes"
+	"image"
+	"image/png"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -43,26 +47,26 @@ var (
 )
 
 func init() {
-	// // init prepares the config paths and an icon temp file
-	// initConfigPaths()
+	// init prepares the config paths and an icon temp file
+	initConfigPaths()
 
-	// // writes icon file to a temp file for usage in notifications
-	// tmpFile, err := ioutil.TempFile(os.TempDir(), "clipster_")
-	// if err != nil {
-	// 	log.Panicln("Error: Cannot create icon file", err)
-	// }
-	// log.Println("Created icon file: " + tmpFile.Name())
+	// writes icon file to a temp file for usage in notifications
+	tmpFile, err := ioutil.TempFile(os.TempDir(), "clipster_")
+	if err != nil {
+		log.Panicln("Error: Cannot create icon file", err)
+	}
+	log.Println("Created icon file: " + tmpFile.Name())
 
-	// m, _, err := image.Decode(bytes.NewReader(ICON_PNG_BYTES))
-	// if err != nil {
-	// 	log.Panicln("Error:", err)
-	// }
+	m, _, err := image.Decode(bytes.NewReader(ICON_PNG_BYTES))
+	if err != nil {
+		log.Panicln("Error:", err)
+	}
 
-	// err = png.Encode(tmpFile, m)
-	// if err != nil {
-	// 	log.Panicln(err)
-	// }
-	// ICON_FILENAME = string(tmpFile.Name())
+	err = png.Encode(tmpFile, m)
+	if err != nil {
+		log.Panicln(err)
+	}
+	ICON_FILENAME = string(tmpFile.Name())
 }
 
 func OpenConfigFile() (bool, error) {

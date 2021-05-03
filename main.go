@@ -15,7 +15,7 @@ import (
 )
 
 func run() {
-	// now we can run stuff on the main thread like this
+	//
 	finish := make(chan bool)
 	mainthread.CallNonBlock(func() { startGui(finish) })
 
