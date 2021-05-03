@@ -1,4 +1,4 @@
-// +build gtk,!darwin linux freebsd openbsd
+// +build gtk darwin linux freebsd openbsd
 
 package loop
 

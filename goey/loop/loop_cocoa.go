@@ -1,4 +1,4 @@
-// +build gtk,darwin
+// +build gtk,cocoa,darwin
 
 package loop
 
