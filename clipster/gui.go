@@ -19,6 +19,7 @@ var (
 )
 
 func ShowNotification(title string, body string) {
+	// TODO: Icon in MacOS is default -> I guess it display bundle icon when there is one
 	err := beeep.Notify(title, body, ICON_FILENAME)
 	if err != nil {
 		log.Println(err)
@@ -26,7 +27,7 @@ func ShowNotification(title string, body string) {
 }
 
 func StartGUIInBackground() {
-	// For GTK to start main loop without showing a window but show trayicon
+	// For GTK to start main loop without showing a window (to show trayicon)
 	log.Println("StartGui")
 	err := loop.Run(createHiddenWindow)
 	if err != nil {

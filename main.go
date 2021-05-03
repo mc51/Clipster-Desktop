@@ -14,18 +14,22 @@ import (
 	"github.com/faiface/mainthread"
 )
 
-func run() {
-	//
-	finish := make(chan bool)
-	mainthread.CallNonBlock(func() { startGui(finish) })
+func main() {
+	mainthread.Run(run) // enables mainthread package and runs run in a separate goroutine
+}
 
+func run() {
+	finish := make(chan bool)
+	// On MacOS GUI needs to be running on main thread or we get a panic
+	mainthread.CallNonBlock(func() { startGui(finish) })
+	// For GTK wait until main loop is started
 	go func() {
 		if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
 			for loop.IsRunning == 0 {
-				time.Sleep(200 * time.Millisecond)
 				log.Println("Waiting for GTK loop to start...")
+				time.Sleep(200 * time.Millisecond)
 			}
-			log.Printf("GTK loop started... Checking for config")
+			log.Printf("GTK loop started... moving on")
 		}
 		ok, err := clipster.OpenConfigFile()
 		if !ok {
@@ -39,14 +43,10 @@ func run() {
 	<-finish
 }
 
-func main() {
-	mainthread.Run(run) // enables mainthread package and runs run in a separate goroutine
-}
-
 func startGui(finish chan bool) {
 	// startGui starts systray and GUI loops. It deals with platform idiosyncraties
 	if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
-		// On linux and macos all GUIs must run on main thead. We use GTK for tray and goey
+		// On linux and macos all GUIs must run on single main thead. We use GTK for tray and goey
 		// Both must be run in same loop, locked to main thread
 		tray.Register(onReady, onExit)
 		// Start gtk loop without displaying window (to show tray)
