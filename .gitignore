@@ -1,7 +1,7 @@
 # Binaries for programs and plugins
 *.dylib
-!build/clipster.app/*
-!build/clipster.app/Contents/Resources/lib/*.dylib
+!build/clipster_mac.app/*
+!build/clipster_mac.app/Contents/Resources/lib/*.dylib
 .DS_Store
 *.exe
 *.exe~
