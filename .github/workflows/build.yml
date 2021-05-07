@@ -44,17 +44,17 @@ jobs:
             CMD_BUILD: go mod tidy && go build --tags gtk -o build/clipster_mac.app/Contents/MacOS/clipster_mac-bin && cd build/ && zip -r9 clipster_mac clipster_mac.app/
             OUT_FILE_NAME: clipster_mac.zip
             ASSET_MIME: application/zip
-          # - os: ubuntu-latest
-          #   TARGET: linux
-          #   CMD_RESOLVE_DEPS: sudo apt-get update && sudo apt-get -y install libgtk-3-dev
-          #   CMD_BUILD: go mod tidy && go build -o build/clipster
-          #   OUT_FILE_NAME: clipster
-          #   ASSET_MIME: application/octet-stream
-          # - os: windows-latest
-          #   TARGET: windows
-          #   CMD_BUILD: go mod tidy && go build -o build/clipster.exe
-          #   OUT_FILE_NAME: clipster.exe
-          #   ASSET_MIME: application/vnd.microsoft.portable-executable
+          - os: ubuntu-latest
+            TARGET: linux
+            CMD_RESOLVE_DEPS: sudo apt-get update && sudo apt-get -y install libgtk-3-dev
+            CMD_BUILD: go mod tidy && go build -o build/clipster_linux
+            OUT_FILE_NAME: clipster_linux
+            ASSET_MIME: application/octet-stream
+          - os: windows-latest
+            TARGET: windows
+            CMD_BUILD: go mod tidy && go build -o build/clipster_win.exe
+            OUT_FILE_NAME: clipster_win.exe
+            ASSET_MIME: application/vnd.microsoft.portable-executable
     steps:
     - name: Install Go
       uses: actions/setup-go@v2

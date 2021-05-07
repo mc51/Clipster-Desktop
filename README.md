@@ -18,14 +18,14 @@ There is an alternative [Clipster-Desktop](https://github.com/mc51/Clipster-Desk
 
 ### Linux 
 
-Download [`clipster`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster) from the latest Linux release and start it. To have Clipster auto start, add it to `Application Autostart`.
+Download [`clipster_linux`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster_linux) from the latest Linux release and start it. To have Clipster auto start, add it to `Application Autostart`.
 
 Clipster depends on gtk-3.0. To install it (Ubuntu/Debian):
 `sudo apt-get install libgtk-3-0`  
 
 ### Windows (coming soon...)
 
-Download [`clipster.exe`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster.exe) from the latest Windows release and start it. To have Clipster auto start for the current user, open the startup folder by opening Explorer and typing `shell:startup`. Copy `clipster.exe` there. 
+Download [`clipster_win.exe`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster_win.exe) from the latest Windows release and start it. To have Clipster auto start for the current user, open the startup folder by opening Explorer and typing `shell:startup`. Copy `clipster_win.exe` there. 
 
 ### MacOS (coming soon...)
 
