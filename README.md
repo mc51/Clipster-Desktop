@@ -23,11 +23,11 @@ Download [`clipster_linux`](https://github.com/mc51/Clipster-Desktop/releases/la
 Clipster depends on gtk-3.0. To install it (Ubuntu/Debian):
 `sudo apt-get install libgtk-3-0`  
 
-### Windows (coming soon...)
+### Windows  
 
 Download [`clipster_win.exe`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster_win.exe) from the latest Windows release and start it. To have Clipster auto start for the current user, open the startup folder by opening Explorer and typing `shell:startup`. Copy `clipster_win.exe` there. 
 
-### MacOS (coming soon...)
+### MacOS  
 
 Download [`clipster_mac.zip`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster_mac.zip) from the latest MacOS release, move it to `Applications` and start it via right-click -> open. You might get a warning message, that you need to ignore. If that fails:
 Go to `System Preferences --> Security & Privacy`. In the `General` Tab the App will be listed and you can start it from there.  
