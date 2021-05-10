@@ -40,8 +40,8 @@ jobs:
         include:
           - os: macos-10.15
             TARGET: macos
-            CMD_RESOLVE_DEPS: conda install -y -c conda-forge gtk3 glib # brew install gtk+3
-            CMD_BUILD: go mod tidy && go build --tags gtk -o build/clipster_mac
+            CMD_RESOLVE_DEPS: conda install -y -q -c conda-forge gtk3 glib # brew install gtk+3
+            CMD_BUILD: export PKG_CONFIG_PATH="$CONDA/lib/pkgconfig" && env && go mod tidy && go build --tags gtk -o build/clipster_mac
             OUT_FILE_NAME: clipster_mac
             ASSET_MIME: application/zip
             CMD_POST_BUILD: |
