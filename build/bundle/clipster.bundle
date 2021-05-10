@@ -3,7 +3,7 @@
 
   <meta>
     <!-- <prefix name="default">${env:JHBUILD_PREFIX}</prefix> -->
-   <prefix name="default">${env:CONDA}/lib</prefix>
+   <prefix name="default">${env:CONDA}</prefix>
     <destination overwrite="yes">${env:GITHUB_WORKSPACE}/build</destination>
     <image>
       <!-- Not implemented yet (DMG image). -->
