@@ -41,12 +41,13 @@ jobs:
           - os: macos-10.15
             TARGET: macos
             CMD_RESOLVE_DEPS: conda install -y -q -c conda-forge gtk3 glib  # brew install gtk+3
-            CMD_BUILD: export PKG_CONFIG_PATH="$CONDA/lib/pkgconfig" && env && go mod tidy && go build --tags gtk -o build/clipster_mac
-            OUT_FILE_NAME: clipster_mac
+            CMD_BUILD: export PKG_CONFIG_PATH="$CONDA/lib/pkgconfig" && go build --tags gtk -o build/clipster_mac .
+            OUT_FILE_NAME: clipster_mac.zip
             ASSET_MIME: application/zip
             CMD_POST_BUILD: |
               git clone https://github.com/mc51/gtk-mac-bundler && cd gtk-mac-bundler && make install
               cd ../ && export PKG_CONFIG_PATH="$CONDA/lib/pkgconfig" && ~/.local/bin/gtk-mac-bundler ./build/bundle/clipster.bundle
+              ls -lah && cd build && zip -r9 clipster_mac clipster_mac.app/
           # - os: ubuntu-latest
           #   TARGET: linux
           #   CMD_RESOLVE_DEPS: sudo apt-get update && sudo apt-get -y install libgtk-3-dev
