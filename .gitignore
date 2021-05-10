@@ -3,11 +3,13 @@
 *.dylib
 !build/clipster_mac.app/*
 !build/clipster_mac.app/Contents/Resources/lib/*.dylib
+!build/bundle/gtk3-launcher.sh
 .DS_Store
 *.exe
 *.exe~
 *.dll
 *.so
+*.sh
 # Test binary, built with `go test -c`
 *.test
 
