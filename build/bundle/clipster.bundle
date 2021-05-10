@@ -17,7 +17,7 @@
   <main-binary dest="${bundle}/Contents/MacOS">${env:GITHUB_WORKSPACE}/build/clipster_mac</main-binary>
   <data dest="${bundle}/Contents/Resources">${project}/clipster.icns</data>
   <binary>${prefix}/lib/libgtk-3.0.dylib</binary>
-  <binary>
+  <!-- <binary>
     ${prefix}/lib/gdk-pixbuf-2.0/${pkg:gdk-pixbuf-2.0:gdk_pixbuf_binary_version}/loaders/*.so
-  </binary>
+  </binary> -->
 </app-bundle>
