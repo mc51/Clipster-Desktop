@@ -40,10 +40,14 @@ jobs:
         include:
           - os: macos-10.15
             TARGET: macos
-            CMD_RESOLVE_DEPS: brew install gtk+3
-            CMD_BUILD: go mod tidy && go build --tags gtk -o build/clipster_mac.app/Contents/MacOS/clipster_mac-bin && cd build/ && zip -r9 clipster_mac clipster_mac.app/
+            CMD_RESOLVE_DEPS: conda install -y -q -c conda-forge gtk3 glib  # brew install gtk+3
+            CMD_BUILD: export PKG_CONFIG_PATH="$CONDA/lib/pkgconfig" && go build --tags gtk -o build/clipster_mac .
             OUT_FILE_NAME: clipster_mac.zip
             ASSET_MIME: application/zip
+            CMD_POST_BUILD: |
+              git clone https://github.com/mc51/gtk-mac-bundler && cd gtk-mac-bundler && make install
+              cd ../ && export PKG_CONFIG_PATH="$CONDA/lib/pkgconfig" && ~/.local/bin/gtk-mac-bundler ./build/bundle/clipster.bundle
+              ls -lah && cd build && zip -r9 clipster_mac clipster_mac.app/
           - os: ubuntu-latest
             TARGET: linux
             CMD_RESOLVE_DEPS: sudo apt-get update && sudo apt-get -y install libgtk-3-dev
@@ -56,17 +60,26 @@ jobs:
             OUT_FILE_NAME: clipster_win.exe
             ASSET_MIME: application/vnd.microsoft.portable-executable
     steps:
+    - uses: s-weigand/setup-conda@v1
+      with:
+        activate-conda: false
+        update-conda: true
+        conda-channels: conda-forge
+      if: runner.os == 'macOS'
+    - name: Resolve dependencies for ${{matrix.TARGET}}
+      if: runner.os == 'Linux' || runner.os == 'macOS'
+      run: ${{matrix.CMD_RESOLVE_DEPS}}
     - name: Install Go
       uses: actions/setup-go@v2
       with:
         go-version: ${{ matrix.go-version }}
     - name: Checkout repo
       uses: actions/checkout@v2
-    - name: Resolve dependencies for ${{matrix.TARGET}}
-      if: runner.os == 'Linux' || runner.os == 'macOS'
-      run: ${{matrix.CMD_RESOLVE_DEPS}}
     - name: Build Go for ${{matrix.TARGET}}
       run: ${{matrix.CMD_BUILD}}
+    - name: Post build for ${{matrix.TARGET}}
+      run: ${{matrix.CMD_POST_BUILD}}
+      if: runner.os == 'macOS'
     - name: Load Release URL File from release job
       uses: actions/download-artifact@v1
       with:

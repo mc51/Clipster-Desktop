@@ -1,0 +1,22 @@
+<?xml version="1.0" standalone="no"?> <!--*- mode: xml -*-->
+<app-bundle>
+
+  <meta>
+   <prefix name="default">${env:CONDA}</prefix>
+    <destination overwrite="yes">${env:GITHUB_WORKSPACE}/build</destination>
+    <image>
+      <!-- Not implemented yet (DMG image). -->
+    </image>
+    <run-install-name-tool/>
+    <launcher-script>${project}/gtk3-launcher.sh</launcher-script >
+    <gtk>gtk+-3.0</gtk>
+  </meta>
+
+  <plist>${project}/Info-clipster.plist</plist>
+  <main-binary dest="${bundle}/Contents/MacOS">${env:GITHUB_WORKSPACE}/build/clipster_mac</main-binary>
+  <data dest="${bundle}/Contents/Resources">${project}/clipster.icns</data>
+  <binary>${prefix}/lib/libgtk-3.0.dylib</binary>
+  <binary>
+    ${prefix}/lib/gdk-pixbuf-2.0/${pkg:gdk-pixbuf-2.0:gdk_pixbuf_binary_version}/loaders/*.so
+  </binary>
+</app-bundle>
