@@ -59,15 +59,21 @@ jobs:
           #   OUT_FILE_NAME: clipster_win.exe
           #   ASSET_MIME: application/vnd.microsoft.portable-executable
     steps:
+    - uses: s-weigand/setup-conda@v1
+      with:
+        activate-conda: false
+        update-conda: true
+        conda-channels: conda-forge
+      if: runner.os == 'macOS'
+    - name: Resolve dependencies for ${{matrix.TARGET}}
+      if: runner.os == 'Linux' || runner.os == 'macOS'
+      run: ${{matrix.CMD_RESOLVE_DEPS}}
     - name: Install Go
       uses: actions/setup-go@v2
       with:
         go-version: ${{ matrix.go-version }}
     - name: Checkout repo
       uses: actions/checkout@v2
-    - name: Resolve dependencies for ${{matrix.TARGET}}
-      if: runner.os == 'Linux' || runner.os == 'macOS'
-      run: ${{matrix.CMD_RESOLVE_DEPS}}
     - name: Build Go for ${{matrix.TARGET}}
       run: ${{matrix.CMD_BUILD}}
     - name: Post build for ${{matrix.TARGET}}
