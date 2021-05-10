@@ -50,7 +50,7 @@ Clipster will add an Icon to your system tray which you can click for opening up
 
 - [x] Encrypt / Decrypt clipboard locally and only transmit encrypted data to server
 - [x] Add clipboard history: share multiple Clips
-- [x] Add PyPi package
+- [x] Create Go version
 - [ ] Support image sharing
   
 ## Contributions
