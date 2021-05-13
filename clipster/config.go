@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"runtime"
+	"strings"
 
 	"github.com/spf13/viper"
 )
@@ -46,12 +47,13 @@ type Config struct {
 var (
 	conf          Config
 	ICON_FILENAME string
-	DESKTOP_ENTRY = []byte(`[Desktop Entry]
+	DESKTOP_ENTRY = `[Desktop Entry]
 Type=Application
 Name=Clipster-Desktop
 Comment=A multi Platform Cloud Clipboard - Desktop Client (Go)
-Exec=/home/mc/Downloads/clipster_linux
-Terminal=false`)
+Exec=PLACEHOLDER
+Terminal=false
+`
 )
 
 func init() {
@@ -163,13 +165,21 @@ func addAutostartLinux() {
 	// if it does, it creates a .desktop file in there for startup on X-Session
 	homedir, err := os.UserHomeDir()
 	if err != nil {
-		log.Panicln("Error:", err)
+		log.Panicln("Error", err)
 	}
+	log.Println("Homedir is: ", homedir)
+	exec_path, err := os.Executable()
+	if err != nil {
+		log.Panicln("Error", err)
+	}
+	log.Println("Executable is: ", exec_path)
+	DESKTOP_ENTRY = strings.Replace(DESKTOP_ENTRY, "PLACEHOLDER", exec_path, 1)
+
 	path := filepath.Join(homedir, ".config", "autostart")
 	if fileExists(path) {
 		log.Println("Config file folder exists", path)
 		file := filepath.Join(path, AUTOSTART_FILENAME)
-		if err := os.WriteFile(file, DESKTOP_ENTRY, 0644); err != nil {
+		if err := os.WriteFile(file, []byte(DESKTOP_ENTRY), 0644); err != nil {
 			log.Println("Error: could not write autostart file", err)
 		} else {
 			log.Println("Ok: written autostart file", file)
