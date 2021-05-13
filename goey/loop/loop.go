@@ -91,6 +91,7 @@ func Run(action func() error) error {
 		return err
 	}
 
+	// -> Keep GTK Loop running to keep showing tray icon!
 	// Check that there is at least on top-level window still open.  Otherwise,
 	// there is not point in running the GUI event loop.
 	// if c := atomic.LoadInt32(&lockCount); c <= 0 {

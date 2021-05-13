@@ -44,7 +44,7 @@ func run() {
 }
 
 func startGui(finish chan bool) {
-	// startGui starts systray and GUI loops. It deals with platform idiosyncraties
+	// startGui starts systray and GUI loops. It deals with platform idiosyncrasies
 	if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
 		// On linux and macos all GUIs must run on single main thead. We use GTK for tray and goey
 		// Both must be run in same loop, locked to main thread

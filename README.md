@@ -18,27 +18,33 @@ There is an alternative [Clipster-Desktop](https://github.com/mc51/Clipster-Desk
 
 ### Linux 
 
-Download [`clipster_linux`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster_linux) from the latest Linux release and start it. To have Clipster auto start, add it to `Application Autostart`.
+Download [`clipster_linux.zip`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster_linux.zip) from the latest release, extract and start it.  
 
-Clipster depends on gtk-3.0. To install it (Ubuntu/Debian):
+Clipster depends on gtk-3.0. To install it on 
+Ubuntu/Debian:
 `sudo apt-get install libgtk-3-0`  
+
+CentOS/RHEL:
+`sudo yum install gtk3-devel`  
 
 ### Windows  
 
-Download [`clipster_win.exe`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster_win.exe) from the latest Windows release and start it. To have Clipster auto start for the current user, open the startup folder by opening Explorer and typing `shell:startup`. Copy `clipster_win.exe` there. 
+Download [`clipster_win.zip`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster_win.zip) from the latest release, extract and start it. To have Clipster auto start for the current user, open the startup folder by opening Explorer and typing `shell:startup`. Copy `clipster_win.exe` there. 
 
-### MacOS  
+### MacOS (>=10.13 High Sierra)  
 
-Download [`clipster_mac.zip`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster_mac.zip) from the latest MacOS release, move it to `Applications` and start it via right-click -> open. You might get a warning message, that you need to ignore. If that fails:
+Download [`clipster_mac.zip`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster_mac.zip) from the latest release, extract, move it to `Applications` and start it via right-click -> open. You might get a warning message, that you need to ignore. If that fails:
 Go to `System Preferences --> Security & Privacy`. In the `General` Tab the App will be listed and you can start it from there.  
   
 To automatically start Clipster, right click on the icon in your Dock and click on `Options --> Open at Login`.  
+  
+*Notice*: M1 processors (ARM architecture) are not (yet) supported.  
   
 Now, you can [use](#usage) clipster!  
   
 ## Usage
 
-On the first startup, you can register a new account or enter your existing credentials for the login. Your credentials will be stored in your `HOMEPATH` in `./config/clipster/config`.  
+On the first startup, you can register a new account or enter your existing credentials for the login. Your credentials will be stored in your `HOMEPATH` in `./config/clipster/config.yaml`.  
 Clipster will add an Icon to your system tray which you can click for opening up a menu with the following options:  
 `Get last Clip` will fetch the last shared Clip from the server and put it into your clipboard.  
 `Get all Clips` will fetch all shared Clips from the server and display them to you.  

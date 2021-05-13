@@ -36,12 +36,12 @@ jobs:
     strategy:
       matrix:
         go-version: [1.16.x]
-        os: [macos-10.15] #, ubuntu-latest, windows-latest]
+        os: [macos-10.15, ubuntu-latest, windows-latest]
         include:
           - os: macos-10.15
             TARGET: macos
-            CMD_RESOLVE_DEPS: conda install -y -q -c conda-forge gtk3 glib  # brew install gtk+3
-            CMD_BUILD: export PKG_CONFIG_PATH="$CONDA/lib/pkgconfig" && go build --tags gtk -o build/clipster_mac .
+            CMD_RESOLVE_DEPS: conda install -y -q -c conda-forge gtk3 glib
+            CMD_BUILD: export PKG_CONFIG_PATH="$CONDA/lib/pkgconfig" && go mod tidy && go build -o build/clipster_mac .
             OUT_FILE_NAME: clipster_mac.zip
             ASSET_MIME: application/zip
             CMD_POST_BUILD: |
@@ -51,14 +51,14 @@ jobs:
           - os: ubuntu-latest
             TARGET: linux
             CMD_RESOLVE_DEPS: sudo apt-get update && sudo apt-get -y install libgtk-3-dev
-            CMD_BUILD: go mod tidy && go build -o build/clipster_linux
-            OUT_FILE_NAME: clipster_linux
-            ASSET_MIME: application/octet-stream
+            CMD_BUILD: go mod tidy && go build -o build/clipster_linux . && cd build && zip -r9 clipster_linux clipster_linux
+            OUT_FILE_NAME: clipster_linux.zip
+            ASSET_MIME: application/zip  # application/octet-stream
           - os: windows-latest
             TARGET: windows
-            CMD_BUILD: go mod tidy && go build -o build/clipster_win.exe
-            OUT_FILE_NAME: clipster_win.exe
-            ASSET_MIME: application/vnd.microsoft.portable-executable
+            CMD_BUILD: go mod tidy && go build -o build/clipster_win.exe && cd build && powershell Compress-Archive clipster_win.exe clipster_win.zip
+            OUT_FILE_NAME: clipster_win.zip
+            ASSET_MIME: application/zip  # application/vnd.microsoft.portable-executable
     steps:
     - uses: s-weigand/setup-conda@v1
       with:
