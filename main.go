@@ -65,13 +65,16 @@ func onReady() {
 	tray.SetTooltip("Clipster")
 	// We can manipulate the tray in other goroutines
 	go func() {
+
 		mLastClip := tray.AddMenuItem("Get last Clip", "Get last Clip")
 		mAllClips := tray.AddMenuItem("Get all Clips", "Get all Clips")
 		mShareClip := tray.AddMenuItem("Share Clip", "Share Clip")
 		tray.AddSeparator()
 		mEditCreds := tray.AddMenuItem("Edit Credentials", "Edit Credentials")
+		mAutostart := tray.AddMenuItemCheckbox("Autostart Clipster", "Autostart Clipster", false)
 		tray.AddSeparator()
 		mQuit := tray.AddMenuItem("Quit", "Quit the whole app")
+
 		// Read from Channel: Called as callback from C
 		for {
 			select {
@@ -87,6 +90,9 @@ func onReady() {
 			case <-mEditCreds.ClickedCh:
 				log.Println("Edit Creds")
 				clipster.ShowEditCredsGUI()
+			case <-mAutostart.ClickedCh:
+				log.Println("Autostart")
+				clipster.AddAutostart()
 			case <-mQuit.ClickedCh:
 				log.Println("Quit")
 				onExit()

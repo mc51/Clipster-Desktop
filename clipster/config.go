@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 
 	"github.com/spf13/viper"
 )
@@ -19,6 +20,7 @@ var CONFIG_FILEPATH string
 
 const CONFIG_FILENAME = "config.yaml"
 const CONFIG_TYPE = "yaml"
+const AUTOSTART_FILENAME = "Clipster.desktop"
 
 const HOST_DEFAULT string = "https://clipster.cc"
 const RE_HOSTNAME string = `^(https):\/\/[^\s\/$.?#].[^\s]*|://localhost:|://127.0.0.1:|^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$`
@@ -44,6 +46,12 @@ type Config struct {
 var (
 	conf          Config
 	ICON_FILENAME string
+	DESKTOP_ENTRY = []byte(`[Desktop Entry]
+Type=Application
+Name=Clipster-Desktop
+Comment=A multi Platform Cloud Clipboard - Desktop Client (Go)
+Exec=/home/mc/Downloads/clipster_linux
+Terminal=false`)
 )
 
 func init() {
@@ -148,4 +156,39 @@ func fileExists(p string) bool {
 		return true
 	}
 	return false
+}
+
+func addAutostartLinux() {
+	// addAutostartLinux runs only on Linux and check if autostart folder exists
+	// if it does, it creates a .desktop file in there for startup on X-Session
+	homedir, err := os.UserHomeDir()
+	if err != nil {
+		log.Panicln("Error:", err)
+	}
+	path := filepath.Join(homedir, ".config", "autostart")
+	if fileExists(path) {
+		log.Println("Config file folder exists", path)
+		file := filepath.Join(path, AUTOSTART_FILENAME)
+		if err := os.WriteFile(file, DESKTOP_ENTRY, 0644); err != nil {
+			log.Println("Error: could not write autostart file", err)
+		} else {
+			log.Println("Ok: written autostart file", file)
+			ShowNotification("Clipster", "Added Clipster to autostart by creating "+file)
+		}
+	} else {
+		// Probabily no supported session manager
+		log.Println("Error: No autostart folder exists")
+		ShowNotification("Clipster", "Could not add Clipster to autostart. Folder "+path+" does not exist.")
+	}
+}
+
+func AddAutostart() {
+	// Add Autostart deals with autostarting Clipster on different OSes
+	if runtime.GOOS == "linux" {
+		addAutostartLinux()
+	} else if runtime.GOOS == "darwin" {
+		ShowNotification("Clipster", "To autostart Clipster, right click on the dock icon and select\n`Options --> Open at Login`.")
+	} else if runtime.GOOS == "windows" {
+		ShowNotification("Clipster", "To autostart Clipster, open the startup folder by typing `shell:startup` in Explorer.\nCopy `clipster_win.exe` there.")
+	}
 }

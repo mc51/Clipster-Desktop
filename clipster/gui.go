@@ -230,52 +230,61 @@ func renderCredsWindow() base.Widget {
 	var user, pw, host string
 	var ssl_disable bool
 	widget :=
-		&goey.HBox{
-			Children: []base.Widget{
-				&goey.VBox{
-					Children: []base.Widget{
-						&goey.Label{Text: "Server address:"},
-						&goey.TextInput{Value: host, Placeholder: HOST_DEFAULT,
-							OnChange: func(v string) {
-								host = v
-								log.Println("server input ", v)
-							}},
-						&goey.Checkbox{Text: "Disable SSL cert check", Value: false,
-							OnChange: func(val_check bool) {
-								ssl_disable = val_check
-								log.Println("check box input: ", val_check)
-							}},
-						&goey.Label{Text: "Username:"},
-						&goey.TextInput{Value: user, Placeholder: "Enter username",
-							OnChange: func(v string) {
-								user = v
-								log.Println("username input ", v)
-							}},
-						&goey.Label{Text: "Password:"},
-						&goey.TextInput{Value: pw, Placeholder: "Enter password", Password: true,
-							OnChange: func(v string) {
-								pw = v
-								log.Println("password input ", v)
-							}},
-						&goey.HBox{
-							Children: []base.Widget{
-								&goey.Button{Text: "Login", OnClick: func() {
-									login_flow(host, user, pw, ssl_disable)
-								}},
-								&goey.Button{Text: "Register", OnClick: func() {
-									register_flow(host, user, pw, ssl_disable)
-								}},
-								&goey.Button{Text: "Cancel", OnClick: func() { mainWindow.Close() }}},
-							AlignMain: goey.MainStart,
-						},
-					},
-				},
-			},
-			AlignMain: goey.MainCenter,
+		[]base.Widget{
+			&goey.Label{Text: "Server address:"},
+			&goey.TextInput{Value: host, Placeholder: HOST_DEFAULT,
+				OnChange: func(v string) {
+					host = v
+					log.Println("server input ", v)
+				}},
+			&goey.Checkbox{Text: "Disable SSL cert check", Value: false,
+				OnChange: func(val_check bool) {
+					ssl_disable = val_check
+					log.Println("SSL checkbox: ", ssl_disable)
+				}},
+			&goey.Label{Text: "Username:"},
+			&goey.TextInput{Value: user, Placeholder: "Enter username",
+				OnChange: func(v string) {
+					user = v
+					log.Println("username input ", v)
+				}},
+			&goey.Label{Text: "Password:"},
+			&goey.TextInput{Value: pw, Placeholder: "Enter password", Password: true,
+				OnChange: func(v string) {
+					pw = v
+					log.Println("password input ", v)
+				}},
 		}
+
+	// On Linux add option to autostart in X startup
+	// if runtime.GOOS == "linux" {
+	// 	widget = append(widget, &goey.HBox{
+	// 		Children: []base.Widget{
+	// 			&goey.Checkbox{Text: "Autostart on X-Startup", Value: true,
+	// 				OnChange: func(val_check bool) {
+	// 					autostart = val_check
+	// 					log.Println("Autostart checkbox", autostart)
+	// 				},
+	// 			}},
+	// 		AlignMain: goey.MainStart,
+	// 	})
+	// }
+
+	widget = append(widget, &goey.HBox{
+		Children: []base.Widget{
+			&goey.Button{Text: "Login", OnClick: func() {
+				login_flow(host, user, pw, ssl_disable)
+			}},
+			&goey.Button{Text: "Register", OnClick: func() {
+				register_flow(host, user, pw, ssl_disable)
+			}},
+			&goey.Button{Text: "Cancel", OnClick: func() { mainWindow.Close() }}},
+		AlignMain: goey.MainCenter,
+	})
+
 	return &goey.Padding{
 		Insets: goey.DefaultInsets(),
-		Child:  widget,
+		Child:  &goey.VBox{Children: widget},
 	}
 }
 

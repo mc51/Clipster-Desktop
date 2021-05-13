@@ -20,11 +20,11 @@ There is an alternative [Clipster-Desktop](https://github.com/mc51/Clipster-Desk
 
 Download [`clipster_linux.zip`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster_linux.zip) from the latest release, extract and start it.  
 
-Clipster depends on gtk-3.0. To install it on 
-Ubuntu/Debian:
+Clipster depends on gtk-3.0. To install it on  
+Ubuntu/Debian:  
 `sudo apt-get install libgtk-3-0`  
 
-CentOS/RHEL:
+CentOS/RHEL:  
 `sudo yum install gtk3-devel`  
 
 ### Windows  
