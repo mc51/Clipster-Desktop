@@ -1,4 +1,4 @@
-// +build gtk linux,!cocoa freebsd,!cocoa openbsd,!cocoa
+// +build gtk linux darwin freebsd openbsd
 
 package goey
 

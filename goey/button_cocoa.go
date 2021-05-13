@@ -1,4 +1,4 @@
-// +build cocoa darwin,!gtk
+// +build cocoa,darwin
 
 package goey
 
