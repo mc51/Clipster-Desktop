@@ -191,7 +191,8 @@ func register_flow(host string, user string, pw string, ssl_disable bool) {
 	conf = Config{host, user, hash_login, hash_msg, ssl_disable}
 	WriteConfigFile(conf)
 	log.Println("Ok: Registration flow completed")
-	mainWindow.Message("Registration successfull\nCredentials saved to config:\n" + CONFIG_FILEPATH).WithInfo().Show()
+	mainWindow.Message("Registration successfull\nCredentials saved to config:\n" +
+		CONFIG_FILEPATH).WithInfo().Show()
 	mainWindow.Close()
 }
 
@@ -221,7 +222,8 @@ func login_flow(host string, user string, pw string, ssl_disable bool) {
 	conf = Config{host, user, hash_login, hash_msg, ssl_disable}
 	WriteConfigFile(conf)
 	log.Println("Ok: login workflow completed")
-	mainWindow.Message("Login successfull\nCredentials saved to config:\n" + CONFIG_FILEPATH).WithInfo().Show()
+	mainWindow.Message("Login successfull\nCredentials saved to config:\n" +
+		CONFIG_FILEPATH).WithInfo().Show()
 	mainWindow.Close()
 }
 
@@ -255,20 +257,6 @@ func renderCredsWindow() base.Widget {
 					log.Println("password input ", v)
 				}},
 		}
-
-	// On Linux add option to autostart in X startup
-	// if runtime.GOOS == "linux" {
-	// 	widget = append(widget, &goey.HBox{
-	// 		Children: []base.Widget{
-	// 			&goey.Checkbox{Text: "Autostart on X-Startup", Value: true,
-	// 				OnChange: func(val_check bool) {
-	// 					autostart = val_check
-	// 					log.Println("Autostart checkbox", autostart)
-	// 				},
-	// 			}},
-	// 		AlignMain: goey.MainStart,
-	// 	})
-	// }
 
 	widget = append(widget, &goey.HBox{
 		Children: []base.Widget{

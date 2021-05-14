@@ -21,7 +21,7 @@ var CONFIG_FILEPATH string
 
 const CONFIG_FILENAME = "config.yaml"
 const CONFIG_TYPE = "yaml"
-const AUTOSTART_FILENAME = "Clipster.desktop"
+const AUTOSTART_FILENAME = "clipster.desktop"
 
 const HOST_DEFAULT string = "https://clipster.cc"
 const RE_HOSTNAME string = `^(https):\/\/[^\s\/$.?#].[^\s]*|://localhost:|://127.0.0.1:|^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$`
@@ -56,10 +56,9 @@ Terminal=false
 `
 )
 
+// init prepares the config paths and an icon temp file
 func init() {
-	// init prepares the config paths and an icon temp file
 	initConfigPaths()
-
 	// writes icon file to a temp file for usage in notifications
 	tmpFile, err := ioutil.TempFile(os.TempDir(), "clipster_")
 	if err != nil {
@@ -79,8 +78,8 @@ func init() {
 	ICON_FILENAME = string(tmpFile.Name())
 }
 
+// OpenConfigFile looks for config file in standard config folders and tries to open it
 func OpenConfigFile() (bool, error) {
-	// OpenConfigFile looks for config file in standard config folders and tries to open it
 	log.Println("Trying to open config file")
 	viper.SetConfigName(CONFIG_FILENAME)
 	viper.SetConfigType(CONFIG_TYPE)
@@ -95,8 +94,8 @@ func OpenConfigFile() (bool, error) {
 	return true, nil
 }
 
+// LoadConfigFromFile loads the credentials from the already opened config file
 func LoadConfigFromFile() (Config, error) {
-	// LoadConfigFromFile loads the credentials from the already opened config file
 	log.Println("Loading config file to struct")
 	if err := viper.Unmarshal(&conf); err != nil {
 		log.Println("Error: Could not decode config into struct")
@@ -106,14 +105,16 @@ func LoadConfigFromFile() (Config, error) {
 	return conf, nil
 }
 
+// WriteConfigFile writes config struct to file
 func WriteConfigFile(c Config) {
-	// WriteConfigFile writes config struct to file
+
 	log.Printf("Writing config: %+v", c)
 	v := reflect.ValueOf(c)
 	typeOfS := v.Type()
 
 	for i := 0; i < v.NumField(); i++ {
-		log.Printf("Field: %s\tValue: %v\n", typeOfS.Field(i).Name, v.Field(i).Interface())
+		log.Printf("Field: %s\tValue: %v\n", typeOfS.Field(i).Name,
+			v.Field(i).Interface())
 		viper.Set(typeOfS.Field(i).Name, v.Field(i).Interface())
 	}
 	if err := viper.WriteConfigAs(CONFIG_FILEPATH); err != nil {
@@ -121,9 +122,9 @@ func WriteConfigFile(c Config) {
 	}
 }
 
+// initConfigPaths checks if at least one config folder exists, otherwise creates it
+// it sets CONFIG_FILEPATH to this path
 func initConfigPaths() {
-	// initConfigPaths checks if at least one config folder exists, otherwise creates it
-	// it sets CONFIG_FILEPATH to this path
 	log.Printf("initConfigPaths")
 	homedir, err := os.UserHomeDir()
 	if err != nil {
@@ -152,17 +153,36 @@ func initConfigPaths() {
 	log.Println("Created config file folder", CONFIG_PATHS[0])
 }
 
+// fileExists checks if a file or folder exists
 func fileExists(p string) bool {
-	// fileExists checks if a file or folder exists
 	if _, err := os.Stat(p); !os.IsNotExist(err) {
 		return true
 	}
 	return false
 }
 
-func addAutostartLinux() {
-	// addAutostartLinux runs only on Linux and check if autostart folder exists
-	// if it does, it creates a .desktop file in there for startup on X-Session
+// isAutostartEnabledLinux checks if there is an autostart file in Linux under
+// ~/.config/autostart/clipster.desktop and returns its path
+func isAutostartEnabledLinux() (bool, string) {
+	homedir, err := os.UserHomeDir()
+	if err != nil {
+		log.Panicln("Error", err)
+		return false, ""
+	}
+	log.Println("Homedir is: ", homedir)
+	file := filepath.Join(homedir, ".config", "autostart", AUTOSTART_FILENAME)
+	if fileExists(file) {
+		log.Println("Ok: Autostart file exists", file)
+		return true, file
+	} else {
+		log.Println("Warning: No Autostart file exists", file)
+		return false, ""
+	}
+}
+
+// enableAutostartLinux check ifs autostart folder ~/.config/autostart exists on Linux
+// if it does, it creates a clipster.desktop there for auto startup on X-Session
+func enableAutostartLinux() {
 	homedir, err := os.UserHomeDir()
 	if err != nil {
 		log.Panicln("Error", err)
@@ -179,7 +199,7 @@ func addAutostartLinux() {
 	if fileExists(path) {
 		log.Println("Config file folder exists", path)
 		file := filepath.Join(path, AUTOSTART_FILENAME)
-		if err := os.WriteFile(file, []byte(DESKTOP_ENTRY), 0644); err != nil {
+		if err := os.WriteFile(file, []byte(DESKTOP_ENTRY), 0664); err != nil {
 			log.Println("Error: could not write autostart file", err)
 		} else {
 			log.Println("Ok: written autostart file", file)
@@ -188,17 +208,66 @@ func addAutostartLinux() {
 	} else {
 		// Probabily no supported session manager
 		log.Println("Error: No autostart folder exists")
-		ShowNotification("Clipster", "Could not add Clipster to autostart. Folder "+path+" does not exist.")
+		ShowNotification("Clipster", "Could not add Clipster to autostart. Folder "+
+			path+" does not exist.")
 	}
 }
 
-func AddAutostart() {
-	// Add Autostart deals with autostarting Clipster on different OSes
+// disableAutostartLinux removes autostart file ~/.config/autostart/clipster.desktop
+// and show status in Notification
+func disableAutostartLinux() {
+	if ok, file := isAutostartEnabledLinux(); ok {
+		if err := os.Remove(file); err != nil {
+			log.Println("Error: could not remove autostart file", file)
+			ShowNotification("Clipster", "Could not remove autostart file "+
+				file+"\n"+err.Error())
+		} else {
+			log.Println("Ok: removed autostart file " + file)
+			ShowNotification("Clipster", "Removed autostart file "+file)
+		}
+	}
+}
+
+// EnableAutostart deals with autostart of Clipster on different OSes
+func EnableAutostart() {
 	if runtime.GOOS == "linux" {
-		addAutostartLinux()
+		enableAutostartLinux()
 	} else if runtime.GOOS == "darwin" {
-		ShowNotification("Clipster", "To autostart Clipster, right click on the dock icon and select\n`Options --> Open at Login`.")
+		ShowNotification("Clipster", "To autostart Clipster, right click on the dock"+
+			" icon and select\n`Options --> Open at Login`.")
 	} else if runtime.GOOS == "windows" {
-		ShowNotification("Clipster", "To autostart Clipster, open the startup folder by typing `shell:startup` in Explorer.\nCopy `clipster_win.exe` there.")
+		ShowNotification("Clipster", "To autostart Clipster, open the startup folder by"+
+			" typing `shell:startup` in Explorer.\nCopy `clipster_win.exe` there.")
+	}
+}
+
+// DisableAutostart deals with disabling autostart of Clipster on different OSes
+func DisableAutostart() {
+	if runtime.GOOS == "linux" {
+		disableAutostartLinux()
+	} else if runtime.GOOS == "darwin" {
+		log.Println("RemoveAutostart not implemented on MacOS")
+
+	} else if runtime.GOOS == "windows" {
+		log.Println("RemoveAutostart not implemented in Windows")
+	}
+}
+
+// IsAutostartEnabled checks if autostart if enabled on different OSes
+func IsAutostartEnabled() bool {
+	if runtime.GOOS == "linux" {
+		ok, _ := isAutostartEnabledLinux()
+		return ok
+	} else {
+		return false
+	}
+}
+
+// ToggleAutostart enable or disable autostart
+func ToggleAutostart() {
+	if IsAutostartEnabled() {
+		DisableAutostart()
+	} else {
+		EnableAutostart()
 	}
 }
