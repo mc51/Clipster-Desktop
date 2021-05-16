@@ -65,41 +65,40 @@ func isAutostartEnabled() (bool, string) {
 	}
 }
 
-// enableAutostartLinux checks if  autostart folder ~/.config/autostart exists on Linux
-// if it does, creates a clipster.desktop there for auto startup on X-Session
+// enableAutostartLinux checks if  autostart folder exists on Linux
+// if it does, creates a clipster.desktop file there for auto startup on X-Session
+// pointing to current executable
 func enableAutostartLinux() {
-	homedir, err := os.UserHomeDir()
-	if err != nil {
-		log.Panicln("Error", err)
-	}
-	log.Println("Homedir is: ", homedir)
+	startup_dir, startup_file := getAutostartDirAndFile()
 	exec_path, err := os.Executable()
 	if err != nil {
 		log.Panicln("Error", err)
 	}
 	log.Println("Executable is: ", exec_path)
-	LINUX_DESKTOP_ENTRY = strings.Replace(LINUX_DESKTOP_ENTRY, "PLACEHOLDER", exec_path, 1)
+	LINUX_DESKTOP_ENTRY = strings.Replace(LINUX_DESKTOP_ENTRY, "PLACEHOLDER",
+		exec_path, 1)
 
-	path := filepath.Join(homedir, ".config", "autostart")
-	if fileExists(path) {
-		log.Println("Config file folder exists", path)
-		_, file := getAutostartDirAndFile()
-		if err := os.WriteFile(file, []byte(LINUX_DESKTOP_ENTRY), 0664); err != nil {
+	if fileExists(startup_dir) {
+		log.Println("Config file folder exists", startup_dir)
+		if err := os.WriteFile(startup_file,
+			[]byte(LINUX_DESKTOP_ENTRY), 0664); err != nil {
 			log.Println("Error: could not write autostart file", err)
 		} else {
-			log.Println("Ok: written autostart file", file)
-			ShowNotification("Clipster", "Added Clipster to autostart by creating "+file)
+			log.Println("Ok: written autostart file", startup_file)
+			ShowNotification("Clipster", "Added Clipster to autostart by creating "+
+				startup_file+"\nWhich points to "+exec_path)
 		}
 	} else {
 		// Probabily no supported session manager
 		log.Println("Error: No autostart folder exists")
 		ShowNotification("Clipster", "Could not add Clipster to autostart. Folder "+
-			path+" does not exist.")
+			startup_dir+" does not exist.")
 	}
 }
 
 // enableAutostartWin creates a shortcut to clipster in the shell:startup folder
 func enableAutostartWin() {
+	_, startup_file := getAutostartDirAndFile()
 	ps := New()
 	exec_path, err := os.Executable()
 	if err != nil {
@@ -107,15 +106,32 @@ func enableAutostartWin() {
 	}
 	log.Println("Executable is: ", exec_path)
 	WIN_CREATE_SHORTCUT = strings.Replace(WIN_CREATE_SHORTCUT, "PLACEHOLDER", exec_path, 1)
-
-	stdOut, stdErr, err := ps.execute(WIN_CREATE_SHORTCUT)
-	log.Printf("CreateShortcut:\nStdOut : '%s'\nStdErr: '%s'\nErr: %s",
-		strings.TrimSpace(stdOut), stdErr, err)
+	_, _, err = ps.execute(WIN_CREATE_SHORTCUT)
+	if err != nil {
+		log.Println("Error: could not create shortcut in startup folder", err)
+	} else {
+		log.Println("Ok: shortcut created")
+		ShowNotification("Clipster", "Added Clipster to autostart by creating "+
+			startup_file+"\nWhich points to "+exec_path)
+	}
 }
 
-// disableAutostartLinux removes autostart file ~/.config/autostart/clipster.desktop
-// and show status in Notification
+// disableAutostartLinux removes autostart file and show status in Notification
 func disableAutostartLinux() {
+	if ok, file := isAutostartEnabled(); ok {
+		if err := os.Remove(file); err != nil {
+			log.Println("Error: could not remove autostart file", file)
+			ShowNotification("Clipster", "Could not remove autostart file "+
+				file+"\n"+err.Error())
+		} else {
+			log.Println("Ok: removed autostart file " + file)
+			ShowNotification("Clipster", "Removed autostart file "+file)
+		}
+	}
+}
+
+// disableAutostartWin removes autostart file and show status in Notification
+func disableAutostartWin() {
 	if ok, file := isAutostartEnabled(); ok {
 		if err := os.Remove(file); err != nil {
 			log.Println("Error: could not remove autostart file", file)
@@ -147,24 +163,19 @@ func disableAutostart() {
 	} else if runtime.GOOS == "darwin" {
 		log.Println("RemoveAutostart not implemented on MacOS")
 	} else if runtime.GOOS == "windows" {
-		log.Println("RemoveAutostart not implemented in Windows")
+		disableAutostartWin()
 	}
 }
 
 // IsAutostartEnabled checks if autostart is enabled on different OSes
 func IsAutostartEnabled() bool {
-	if runtime.GOOS == "linux" {
-		ok, _ := isAutostartEnabled()
-		return ok
-	} else if runtime.GOOS == "windows" {
+	if runtime.GOOS == "linux" || runtime.GOOS == "windows" {
 		ok, _ := isAutostartEnabled()
 		return ok
 	} else {
 		return false
 	}
 }
-
-// TODO: Implement for Windows as well
 
 // ToggleAutostart enable or disable autostart
 func ToggleAutostart() {
