@@ -63,7 +63,7 @@ func onReady() {
 	tray.SetIcon(clipster.ICON_TRAY_BYTES)
 	tray.SetTitle("Clipster")
 	tray.SetTooltip("Clipster")
-	autostart := clipster.IsAutostartEnabled()
+	autostart_enabled := clipster.IsAutostartEnabled()
 
 	// We can manipulate the tray in other goroutines
 	go func() {
@@ -74,7 +74,7 @@ func onReady() {
 		tray.AddSeparator()
 		mEditCreds := tray.AddMenuItem("Edit Credentials", "Edit Credentials")
 		mAutostart := tray.AddMenuItemCheckbox("Autostart Clipster", "Autostart Clipster",
-			autostart)
+			autostart_enabled)
 		tray.AddSeparator()
 		mQuit := tray.AddMenuItem("Quit", "Quit the whole app")
 
