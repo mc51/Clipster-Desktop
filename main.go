@@ -95,6 +95,7 @@ func onReady() {
 				clipster.ShowEditCredsGUI()
 			case <-mAutostart.ClickedCh:
 				log.Println("Autostart")
+				autostart_enabled = !autostart_enabled
 				clipster.ToggleAutostart()
 			case <-mQuit.ClickedCh:
 				log.Println("Quit")
