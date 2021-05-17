@@ -19,29 +19,29 @@ There is an alternative [Clipster-Desktop](https://github.com/mc51/Clipster-Desk
 ### Linux 
 
 Download [`clipster_linux.zip`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster_linux.zip) from the latest release, extract and start it.  
-
-Clipster depends on gtk-3.0. To install it on 
-Ubuntu/Debian:
+To have Clipster auto start, right click on the systray menu and select `Autostart Clipster`.  
+  
+Clipster depends on gtk-3.0. To install it on  
+Ubuntu/Debian:  
 `sudo apt-get install libgtk-3-0`  
 
-CentOS/RHEL:
-`sudo yum install gtk3-devel`  
+CentOS/RHEL:  
+`sudo yum install gtk3-devel`
 
 ### Windows  
 
-Download [`clipster_win.zip`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster_win.zip) from the latest release, extract and start it. To have Clipster auto start for the current user, open the startup folder by opening Explorer and typing `shell:startup`. Copy `clipster_win.exe` there. 
+Download [`clipster_win.zip`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster_win.zip) from the latest release, extract and start it.  
+To have Clipster auto start, right click on the systray menu and select `Autostart Clipster`.
 
 ### MacOS (>=10.13 High Sierra)  
 
-Download [`clipster_mac.zip`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster_mac.zip) from the latest release, extract, move it to `Applications` and start it via right-click -> open. You might get a warning message, that you need to ignore. If that fails:
+Download [`clipster_mac.zip`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster_mac.zip) from the latest release, extract, move it to `Applications` and start it via `right-click -> open`. You might get a warning message, that you need to ignore. If that fails:
 Go to `System Preferences --> Security & Privacy`. In the `General` Tab the App will be listed and you can start it from there.  
   
-To automatically start Clipster, right click on the icon in your Dock and click on `Options --> Open at Login`.  
+To have Clipster auto start, right click on the icon in your dock and select `Options --> Open at Login`.  
   
-*Notice*: M1 processors (ARM architecture) are not (yet) supported.  
-  
-Now, you can [use](#usage) clipster!  
-  
+*Notice*: M1 processors (ARM architecture) are not (yet) supported.
+
 ## Usage
 
 On the first startup, you can register a new account or enter your existing credentials for the login. Your credentials will be stored in your `HOMEPATH` in `./config/clipster/config.yaml`.  
@@ -50,15 +50,16 @@ Clipster will add an Icon to your system tray which you can click for opening up
 `Get all Clips` will fetch all shared Clips from the server and display them to you.  
 `Share Clip` will share your current clipboard. Then, it's available for all your devices.  
 `Edit Credentials` allows you to register a new account or change your login credentials.  
-`Quit` will terminate the app.  
+`Quit` will terminate the app.
 
 ## Roadmap
 
 - [x] Encrypt / Decrypt clipboard locally and only transmit encrypted data to server
 - [x] Add clipboard history: share multiple Clips
 - [x] Create Go version
+- [x] Add auto start feature
 - [ ] Support image sharing
-  
+
 ## Contributions
 
 Contributions are very welcome. If you come across a bug, please open an issue. The same thing goes for feature requests.
@@ -70,3 +71,4 @@ Contributions are very welcome. If you come across a bug, please open an issue. 
 - Notifications using [beep](https://github.com/gen2brain/beeep)
 - Config by [Viper](https://github.com/spf13/viper)
 - Crypto using [PBKDF2](https://pkg.go.dev/golang.org/x/crypto/pbkdf2) and [Fernet](https://github.com/fernet/fernet-go)
+- [Clipboard](https://github.com/golang-design/clipboard)

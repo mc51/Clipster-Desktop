@@ -16,5 +16,6 @@ func GetClipboard() string {
 }
 
 func SetClipboard(clip string) {
+	log.Println("Set Clipboard:", clip)
 	clipboard.Write(clipboard.FmtText, []byte(clip))
 }

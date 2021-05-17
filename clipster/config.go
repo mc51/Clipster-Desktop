@@ -46,10 +46,9 @@ var (
 	ICON_FILENAME string
 )
 
+// init prepares the config paths and an icon temp file
 func init() {
-	// init prepares the config paths and an icon temp file
 	initConfigPaths()
-
 	// writes icon file to a temp file for usage in notifications
 	tmpFile, err := ioutil.TempFile(os.TempDir(), "clipster_")
 	if err != nil {
@@ -69,8 +68,8 @@ func init() {
 	ICON_FILENAME = string(tmpFile.Name())
 }
 
+// OpenConfigFile looks for config file in standard config folders and tries to open it
 func OpenConfigFile() (bool, error) {
-	// OpenConfigFile looks for config file in standard config folders and tries to open it
 	log.Println("Trying to open config file")
 	viper.SetConfigName(CONFIG_FILENAME)
 	viper.SetConfigType(CONFIG_TYPE)
@@ -85,8 +84,8 @@ func OpenConfigFile() (bool, error) {
 	return true, nil
 }
 
+// LoadConfigFromFile loads the credentials from the already opened config file
 func LoadConfigFromFile() (Config, error) {
-	// LoadConfigFromFile loads the credentials from the already opened config file
 	log.Println("Loading config file to struct")
 	if err := viper.Unmarshal(&conf); err != nil {
 		log.Println("Error: Could not decode config into struct")
@@ -96,14 +95,16 @@ func LoadConfigFromFile() (Config, error) {
 	return conf, nil
 }
 
+// WriteConfigFile writes config struct to file
 func WriteConfigFile(c Config) {
-	// WriteConfigFile writes config struct to file
+
 	log.Printf("Writing config: %+v", c)
 	v := reflect.ValueOf(c)
 	typeOfS := v.Type()
 
 	for i := 0; i < v.NumField(); i++ {
-		log.Printf("Field: %s\tValue: %v\n", typeOfS.Field(i).Name, v.Field(i).Interface())
+		log.Printf("Field: %s\tValue: %v\n", typeOfS.Field(i).Name,
+			v.Field(i).Interface())
 		viper.Set(typeOfS.Field(i).Name, v.Field(i).Interface())
 	}
 	if err := viper.WriteConfigAs(CONFIG_FILEPATH); err != nil {
@@ -111,9 +112,9 @@ func WriteConfigFile(c Config) {
 	}
 }
 
+// initConfigPaths checks if at least one config folder exists, otherwise creates it
+// it sets CONFIG_FILEPATH to this path
 func initConfigPaths() {
-	// initConfigPaths checks if at least one config folder exists, otherwise creates it
-	// it sets CONFIG_FILEPATH to this path
 	log.Printf("initConfigPaths")
 	homedir, err := os.UserHomeDir()
 	if err != nil {
@@ -142,8 +143,8 @@ func initConfigPaths() {
 	log.Println("Created config file folder", CONFIG_PATHS[0])
 }
 
+// fileExists checks if a file or folder exists
 func fileExists(p string) bool {
-	// fileExists checks if a file or folder exists
 	if _, err := os.Stat(p); !os.IsNotExist(err) {
 		return true
 	}
