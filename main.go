@@ -95,6 +95,8 @@ func onReady() {
 				clipster.ShowEditCredsGUI()
 			case <-mAutostart.ClickedCh:
 				log.Println("Autostart")
+				// TODO: FIXME this doesnt work on windows - checkmark status changed only
+				// after restart
 				autostart_enabled = !autostart_enabled
 				clipster.ToggleAutostart()
 			case <-mQuit.ClickedCh:
