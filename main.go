@@ -18,6 +18,8 @@ func main() {
 	mainthread.Run(run) // enables mainthread package and runs run in a separate goroutine
 }
 
+// run make sure GUI is run on mainthread. If using GTK wait for main loop start
+// then check for Config
 func run() {
 	finish := make(chan bool)
 	// On MacOS GUI needs to be running on main thread or we get a panic
@@ -43,8 +45,8 @@ func run() {
 	<-finish
 }
 
+// startGui starts systray and GUI loops. It deals with platform idiosyncrasies
 func startGui(finish chan bool) {
-	// startGui starts systray and GUI loops. It deals with platform idiosyncrasies
 	if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
 		// On linux and macos all GUIs must run on single main thead.
 		// We use GTK for tray and goey. Both must run in same loop, locked to main thread
@@ -58,6 +60,7 @@ func startGui(finish chan bool) {
 	close(finish)
 }
 
+// onReady is called on systray startup. It displays tray menu and deals with selections
 func onReady() {
 	log.Println("On Ready")
 	tray.SetIcon(clipster.ICON_TRAY_BYTES)
@@ -108,6 +111,7 @@ func onReady() {
 	}()
 }
 
+// onExit is called on systray menu quit
 func onExit() {
 	// Remove temp icon file
 	if err := os.Remove(clipster.ICON_FILENAME); err != nil {

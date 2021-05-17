@@ -194,6 +194,7 @@ func New() *PowerShell {
 	}
 }
 
+// execute command on powershell and return outputs
 func (p *PowerShell) execute(args ...string) (stdOut string, stdErr string, err error) {
 	args = append([]string{"-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden"}, args...)
 	cmd := exec.Command(p.powerShell, args...)
