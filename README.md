@@ -30,7 +30,8 @@ CentOS/RHEL:
 
 ### Windows  
 
-Download [`clipster_win.zip`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster_win.zip) from the latest release, extract and start it. To have Clipster auto start for the current user, open the startup folder by opening Explorer and typing `shell:startup`. Copy `clipster_win.exe` there.
+Download [`clipster_win.zip`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster_win.zip) from the latest release, extract and start it.  
+To have Clipster auto start, right click on the systray menu and select `Autostart Clipster`.
 
 ### MacOS (>=10.13 High Sierra)  
 
@@ -56,7 +57,7 @@ Clipster will add an Icon to your system tray which you can click for opening up
 - [x] Encrypt / Decrypt clipboard locally and only transmit encrypted data to server
 - [x] Add clipboard history: share multiple Clips
 - [x] Create Go version
-- [ ] Add auto start feature
+- [x] Add auto start feature
 - [ ] Support image sharing
 
 ## Contributions
