@@ -41,7 +41,7 @@ jobs:
           - os: macos-10.15
             TARGET: macos
             CMD_RESOLVE_DEPS: conda install -y -q -c conda-forge gtk3 glib
-            CMD_BUILD: export PKG_CONFIG_PATH="$CONDA/lib/pkgconfig" && go mod tidy && go build -o build/clipster_mac .
+            CMD_BUILD: export PKG_CONFIG_PATH="$CONDA/lib/pkgconfig" && go mod tidy && go build -o build/clipster_mac -ldflags "-s -w" .
             OUT_FILE_NAME: clipster_mac.zip
             ASSET_MIME: application/zip
             CMD_POST_BUILD: |
@@ -51,13 +51,13 @@ jobs:
           - os: ubuntu-latest
             TARGET: linux
             CMD_RESOLVE_DEPS: sudo apt-get update && sudo apt-get -y install libgtk-3-dev
-            CMD_BUILD: go mod tidy && go build -o build/clipster_linux . && cd build && zip -r9 clipster_linux clipster_linux
+            CMD_BUILD: go mod tidy && go build -o build/clipster_linux -ldflags "-s -w" . && cd build && zip -r9 clipster_linux clipster_linux
             OUT_FILE_NAME: clipster_linux.zip
             ASSET_MIME: application/zip  # application/octet-stream
           - os: windows-latest
             TARGET: windows
             CMD_PRE_BUILD: go get github.com/akavel/rsrc && rsrc -ico assets/clipster_icon_64.ico
-            CMD_BUILD: go mod tidy && go build -ldflags -H=windowsgui -o build/clipster_win.exe && cd build && powershell Compress-Archive clipster_win.exe clipster_win.zip
+            CMD_BUILD: go mod tidy && go build -o build/clipster_win.exe -ldflags "-H=windowsgui -s -w" . && cd build && powershell Compress-Archive clipster_win.exe clipster_win.zip
             OUT_FILE_NAME: clipster_win.zip
             ASSET_MIME: application/zip  # application/vnd.microsoft.portable-executable
     steps:

@@ -50,6 +50,7 @@ Clipster will add an Icon to your system tray which you can click for opening up
 `Get all Clips` will fetch all shared Clips from the server and display them to you.  
 `Share Clip` will share your current clipboard. Then, it's available for all your devices.  
 `Edit Credentials` allows you to register a new account or change your login credentials.  
+`Autostart Clipster` will add it to auto start.  
 `Quit` will terminate the app.
 
 ## Roadmap
