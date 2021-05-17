@@ -56,7 +56,7 @@ jobs:
             ASSET_MIME: application/zip  # application/octet-stream
           - os: windows-latest
             TARGET: windows
-            CMD_BUILD: go mod tidy && go build -o build/clipster_win.exe && cd build && powershell Compress-Archive clipster_win.exe clipster_win.zip
+            CMD_BUILD: go mod tidy && go build -ldflags -H=windowsgui -o build/clipster_win.exe && cd build && powershell Compress-Archive clipster_win.exe clipster_win.zip
             OUT_FILE_NAME: clipster_win.zip
             ASSET_MIME: application/zip  # application/vnd.microsoft.portable-executable
     steps:
