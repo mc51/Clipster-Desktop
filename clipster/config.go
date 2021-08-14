@@ -28,6 +28,9 @@ const API_URI_REGISTER = "/register/"
 const API_URI_LOGIN = "/verify-user/"
 const API_REQ_TIMEOUT = 6
 
+const MAX_NOTIFICATION_LENGTH = 100
+const MSG_NOTIFY_GOT_IMAGE = "Got an image!"
+
 // Must be same as the other clients
 const HASH_ITERS_LOGIN = 20000
 const HASH_ITERS_MSG = 10000

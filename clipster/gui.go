@@ -20,14 +20,17 @@ var (
 
 func ShowNotification(title string, body string) {
 	// TODO: Icon in MacOS is default -> I guess it display bundle icon when there is one
+	if len(body) >= MAX_NOTIFICATION_LENGTH {
+		body = body[0:MAX_NOTIFICATION_LENGTH] + " [...]"
+	}
 	err := beeep.Notify(title, body, ICON_FILENAME)
 	if err != nil {
 		log.Println(err)
 	}
 }
 
+// For GTK to start main loop without showing a window (to show trayicon)
 func StartGUIInBackground() {
-	// For GTK to start main loop without showing a window (to show trayicon)
 	log.Println("StartGui")
 	err := loop.Run(createHiddenWindow)
 	if err != nil {
@@ -36,9 +39,9 @@ func StartGUIInBackground() {
 	log.Println("End StartGUIInBackground")
 }
 
+// createHiddenWindow keeps GTK main loop running without showing a window
+// to keep tray icon available
 func createHiddenWindow() error {
-	// createHiddenWindow keeps GTK main loop running without showing a window
-	// to keep tray icon available
 	log.Println("createHiddenWindow")
 	// this need adapted goey function without gtk call to .show()
 	_, err := goey.NewHiddenWindow("", nil)
@@ -66,7 +69,7 @@ func GUIAskForCredentials() error {
 	return nil
 }
 
-func GUIShowClips(clips []string) error {
+func GUIShowClips(clips []Clips) error {
 	log.Println("GUIShowClips")
 	os.Setenv("GOEY_SIZE", "600x100")
 	w, err := goey.NewWindow("Clipster – Your Clips", renderShowClipsWindows(clips))
@@ -83,8 +86,8 @@ func GUIShowClips(clips []string) error {
 	return nil
 }
 
+// guiDo runs a GUI function on the appropriate thread depending on the os
 func guiDo(f func() error) {
-	// guiDo runs a GUI function on the appropriate thread depending on the os
 	log.Println("guiDo")
 	if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
 		// run f on main (GUI) thread
@@ -113,64 +116,62 @@ func ShowEditCredsGUI() {
 // 	}
 // }
 
+// ShareClipFlow gets current clipboard value, encrypts it
+// uploads it to server and shows notification
 func ShareClipFlow() {
-	// ShareClipFlow gets current clipboard value, encrypts it
-	// uploads it to server and shows notification
 	log.Println("ShareClipFlow")
-	clip := GetClipboard()
+	clip, format := GetClipboard()
 	clip_encrypted := Encrypt(clip)
-	if err := APIShareClip(clip_encrypted); err != nil {
+	if err := APIShareClip(clip_encrypted, format); err != nil {
 		ShowNotification("Clipster - Error", err.Error())
 		log.Println("Error:", err)
 		return
 	}
-	ShowNotification("Clipster – Shared clip", clip)
+	if format == "txt" {
+		ShowNotification("Clipster – Shared clip", clip)
+	} else if format == "img" {
+		ShowNotification("Clipster – Shared clip", MSG_NOTIFY_GOT_IMAGE)
+	}
 }
 
+// DownloadLastClipFlow downloads all clips as json from API
+// unencrypts the latest encrypted text
+// copies content to clipboard and shows notification
 func DownloadLastClipFlow() {
-	// DownloadLastClipFlow downloads all clips as json from API
-	// unencrypts the latest encrypted text
-	// copies content to clipboard and shows notification
 	log.Println("DownloadLastClipFlow")
-	clips_ecrypted, err := APIDownloadAllClips()
+	clips_encrypted, err := APIDownloadAllClips()
 	if err != nil {
 		ShowNotification("Clipster - Error", err.Error())
 		log.Println("Error:", err)
 		return
 	}
-	log.Printf("Clips: %+v", clips_ecrypted)
-	clip_decrypted := Decrypt(clips_ecrypted[len(clips_ecrypted)-1].Text)
-	SetClipboard(clip_decrypted)
-	ShowNotification("Clipster – Got new clip", clip_decrypted)
+	log.Printf("Clips: %+v", clips_encrypted)
+	last_clip := clips_encrypted[len(clips_encrypted)-1]
+	last_clip.TextDecrypted = Decrypt(last_clip.Text)
+	SetClipboard(last_clip)
 }
 
+// DownloadAllClipsFlow downloads all clips as json from API, unencrypts the encrypted texts
+// and display result in gui
 func DownloadAllClipsFlow() {
-	// DownloadAllClipsFlow downloads all clips as json from API
-	// unencrypts the encrypted texts
-	// display result in gui
-	clips_ecrypted, err := APIDownloadAllClips()
+	clips, err := APIDownloadAllClips()
 	if err != nil {
 		ShowNotification("Clipster - Error", err.Error())
 		log.Println("Error:", err)
 		return
 	}
-	log.Printf("Clips: %+v", clips_ecrypted)
-
-	clips_decrypted := make([]string, len(clips_ecrypted))
-	for i := range clips_ecrypted {
-		clips_decrypted[i] = Decrypt(clips_ecrypted[i].Text)
+	log.Printf("Clips: %+v", clips)
+	for i := range clips {
+		clips[i].TextDecrypted = Decrypt(clips[i].Text)
 	}
-
-	f := func() error { return GUIShowClips(clips_decrypted) }
+	f := func() error { return GUIShowClips(clips) }
 	guiDo(f)
 }
 
+// register_flow check for completeness of creds, creates hash from them,
+// uses hash to register at API endpoint, displays Message box with the result.
+// On success saves credentials to config
 func register_flow(host string, user string, pw string, ssl_disable bool) {
-	// register_flow check for completeness of creds
-	// creates hash from them
-	// uses hash to register at API endpoint
-	// displays Message box with the result
-	// on success saves credentials to config
 	host, user, pw, err := AreCredsComplete(host, user, pw)
 	if err != nil {
 		mainWindow.Message(err.Error()).WithError().Show()
@@ -196,12 +197,10 @@ func register_flow(host string, user string, pw string, ssl_disable bool) {
 	mainWindow.Close()
 }
 
+// login_flow check for completeness of creds, creates hash from them,
+// uses hash to authenticate against API endpoint, displays Message box with the result.
+// On success saves credentials to config
 func login_flow(host string, user string, pw string, ssl_disable bool) {
-	// login_flow check for completeness of creds
-	// creates hash from them
-	// uses hash to authemtocate against API endpoint
-	// displays Message box with the result
-	// on success saves credentials to config
 	host, user, pw, err := AreCredsComplete(host, user, pw)
 	if err != nil {
 		mainWindow.Message(err.Error()).WithError().Show()
@@ -227,8 +226,8 @@ func login_flow(host string, user string, pw string, ssl_disable bool) {
 	mainWindow.Close()
 }
 
+// renderCredsWindow renders the Window for editing Credentials
 func renderCredsWindow() base.Widget {
-	// renderCredsWindow renders the Window for editing Credentials
 	var user, pw, host string
 	var ssl_disable bool
 	widget :=
@@ -276,18 +275,19 @@ func renderCredsWindow() base.Widget {
 	}
 }
 
-func renderShowClipsWindows(clips []string) base.Widget {
-	// renderShowClipsWindows renders goey Window showing downloaded Clips
-	// allows user to copy text using shortcut or by clicking into text field
-	// and using the button
+// renderShowClipsWindows renders goey Window showing downloaded Clips.
+// Allows user to copy text using shortcut or by clicking into text field
+// and using the button
+func renderShowClipsWindows(clips []Clips) base.Widget {
 	var id_selected int
 	widgets := []base.Widget{
 		&goey.Label{Text: "Your shared Clips:"},
 	}
 
+	// TODO: when img, show thumbnail or something
 	for i, v := range clips {
 		j := i
-		widgets = append(widgets, &goey.TextArea{Value: v,
+		widgets = append(widgets, &goey.TextArea{Value: v.TextDecrypted,
 			ReadOnly: true,
 			MinLines: 3,
 			OnFocus: func() {
@@ -299,8 +299,8 @@ func renderShowClipsWindows(clips []string) base.Widget {
 		Children: []base.Widget{
 			&goey.Button{Text: "Copy to Clipboard", OnClick: func() {
 				fmt.Println("Copy to Clipboard")
-				SetClipboard(clips[id_selected])
-				ShowNotification("Clipster - Copied to clipboard", clips[id_selected])
+				clip := clips[id_selected]
+				SetClipboard(clip)
 				mainWindow.Close()
 			}},
 			&goey.Button{Text: "Cancel", OnClick: func() { mainWindow.Close() }}},
