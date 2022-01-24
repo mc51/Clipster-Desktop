@@ -3,6 +3,7 @@ package clipster
 
 import (
 	"bytes"
+	"encoding/base64"
 	"errors"
 	"image"
 	"log"
@@ -10,13 +11,26 @@ import (
 	"strings"
 )
 
-func IconAsImageFromBytes(img []byte) (image.Image, error) {
-	// IconAsImageFromBytes read image from bytes and returns image
+// BytesToImage reads image from bytes and returns image.Image
+func BytesToImage(img []byte) (image.Image, error) {
 	m, _, err := image.Decode(bytes.NewReader(img))
 	if err != nil {
 		log.Panicln("Error:", err)
 	}
 	return m, err
+}
+
+// B64ToImage converts b64 encoded string of an image to image.Image
+func B64ToImage(img string) (image.Image, error) {
+	img_bytes, err := base64.StdEncoding.DecodeString(img)
+	if err != nil {
+		log.Panicln("Error:", err)
+	}
+	image, err := BytesToImage(img_bytes)
+	if err != nil {
+		log.Panicln("Error:", err)
+	}
+	return image, err
 }
 
 func AreCredsComplete(host string, user string, pw string) (string, string, string, error) {

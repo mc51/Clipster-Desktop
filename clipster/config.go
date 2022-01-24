@@ -30,6 +30,8 @@ const API_REQ_TIMEOUT = 6
 
 const MAX_NOTIFICATION_LENGTH = 100
 const MSG_NOTIFY_GOT_IMAGE = "Got an image!"
+const THUMBNAIL_HEIGHT = 200
+const THUMBNAIL_WIDTH = 200
 
 // Must be same as the other clients
 const HASH_ITERS_LOGIN = 20000

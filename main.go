@@ -4,35 +4,27 @@ package main
 import (
 	"log"
 	"os"
-	"runtime"
-	"time"
 
 	"clipster/clipster"
-	"clipster/goey/loop"
-	"clipster/tray"
 
 	"github.com/faiface/mainthread"
+	"github.com/getlantern/systray"
+	"github.com/gotk3/gotk3/gtk"
 )
 
 func main() {
 	mainthread.Run(run) // enables mainthread package and runs run in a separate goroutine
 }
 
-// run make sure GUI is run on mainthread. If using GTK wait for main loop start
+// run GUI on mainthread. If using GTK wait for main loop start
 // then check for Config
 func run() {
 	finish := make(chan bool)
 	// On MacOS GUI needs to be running on main thread or we get a panic
+	systray.Register(onReady, onExit)
 	mainthread.CallNonBlock(func() { startGui(finish) })
 	// For GTK wait until main loop is started
 	go func() {
-		if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
-			for loop.IsRunning == 0 {
-				log.Println("Waiting for GTK loop to start...")
-				time.Sleep(200 * time.Millisecond)
-			}
-			log.Printf("GTK loop started... moving on")
-		}
 		ok, err := clipster.OpenConfigFile()
 		if !ok {
 			log.Println("Error:", err)
@@ -47,39 +39,31 @@ func run() {
 
 // startGui starts systray and GUI loops. It deals with platform idiosyncrasies
 func startGui(finish chan bool) {
-	if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
-		// On linux and macos all GUIs must run on single main thead.
-		// We use GTK for tray and goey. Both must run in same loop, locked to main thread
-		tray.Register(onReady, onExit)
-		// Start gtk loop without displaying window (to show tray)
-		clipster.StartGUIInBackground()
-	} else if runtime.GOOS == "windows" {
-		// On Win GUIs can run on non-main thread. tray gets own thread
-		tray.Run(onReady, onExit)
-	}
+	gtk.Init(nil)
+	gtk.Main()
 	close(finish)
 }
 
 // onReady is called on systray startup. It displays tray menu and deals with selections
 func onReady() {
 	log.Println("On Ready")
-	tray.SetIcon(clipster.ICON_TRAY_BYTES)
-	tray.SetTitle("Clipster")
-	tray.SetTooltip("Clipster")
+	systray.SetIcon(clipster.ICON_TRAY_BYTES)
+	systray.SetTitle("Clipster")
+	systray.SetTooltip("Clipster")
 	autostart_enabled := clipster.IsAutostartEnabled()
 
 	// We can manipulate the tray in other goroutines
 	go func() {
 
-		mLastClip := tray.AddMenuItem("Get last Clip", "Get last Clip")
-		mAllClips := tray.AddMenuItem("Get all Clips", "Get all Clips")
-		mShareClip := tray.AddMenuItem("Share Clip", "Share Clip")
-		tray.AddSeparator()
-		mEditCreds := tray.AddMenuItem("Edit Credentials", "Edit Credentials")
-		mAutostart := tray.AddMenuItemCheckbox("Autostart Clipster", "Autostart Clipster",
+		mLastClip := systray.AddMenuItem("Get last Clip", "Get last Clip")
+		mAllClips := systray.AddMenuItem("Get all Clips", "Get all Clips")
+		mShareClip := systray.AddMenuItem("Share Clip", "Share Clip")
+		systray.AddSeparator()
+		mEditCreds := systray.AddMenuItem("Edit Credentials", "Edit Credentials")
+		mAutostart := systray.AddMenuItemCheckbox("Autostart Clipster", "Autostart Clipster",
 			autostart_enabled)
-		tray.AddSeparator()
-		mQuit := tray.AddMenuItem("Quit", "Quit the whole app")
+		systray.AddSeparator()
+		mQuit := systray.AddMenuItem("Quit", "Quit the whole app")
 
 		// Read from Channel: Called as callback from C
 		for {
@@ -117,5 +101,5 @@ func onExit() {
 	if err := os.Remove(clipster.ICON_FILENAME); err != nil {
 		log.Println("Error: deleting temp file", err)
 	}
-	tray.Quit()
+	systray.Quit()
 }
