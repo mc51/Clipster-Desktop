@@ -16,32 +16,24 @@ func main() {
 	mainthread.Run(run) // enables mainthread package and runs run in a separate goroutine
 }
 
-// run GUI on mainthread. If using GTK wait for main loop start
-// then check for Config
+// run GUI on main thread which is requirement for MacOS
 func run() {
-	finish := make(chan bool)
-	// On MacOS GUI needs to be running on main thread or we get a panic
-	systray.Register(onReady, onExit)
-	mainthread.CallNonBlock(func() { startGui(finish) })
-	// For GTK wait until main loop is started
-	go func() {
-		ok, err := clipster.OpenConfigFile()
-		if !ok {
-			log.Println("Error:", err)
-			clipster.ShowEditCredsGUI()
-		} else {
-			conf, _ := clipster.LoadConfigFromFile()
-			log.Printf("%+v", conf)
-		}
-	}()
-	<-finish
+	mainthread.CallNonBlock(func() { initGTK() })
+	ok, err := clipster.OpenConfigFile()
+	if !ok {
+		log.Println("Error:", err)
+		clipster.DoGUI(clipster.GUI_ConfigWindow)
+	} else {
+		conf, _ := clipster.LoadConfigFromFile()
+		log.Printf("%+v", conf)
+	}
 }
 
-// startGui starts systray and GUI loops. It deals with platform idiosyncrasies
-func startGui(finish chan bool) {
+// initGTK registers systray and starts GTK loop
+func initGTK() {
 	gtk.Init(nil)
+	systray.Register(onReady, onExit)
 	gtk.Main()
-	close(finish)
 }
 
 // onReady is called on systray startup. It displays tray menu and deals with selections
@@ -79,7 +71,7 @@ func onReady() {
 				clipster.ShareClipFlow()
 			case <-mEditCreds.ClickedCh:
 				log.Println("Edit Creds")
-				clipster.ShowEditCredsGUI()
+				clipster.DoGUI(clipster.GUI_ConfigWindow)
 			case <-mAutostart.ClickedCh:
 				log.Println("Autostart")
 				// TODO: FIXME this doesnt work on windows - checkmark status changed only

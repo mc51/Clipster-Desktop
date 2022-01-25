@@ -9,6 +9,8 @@ import (
 	"log"
 	"regexp"
 	"strings"
+
+	"github.com/gotk3/gotk3/glib"
 )
 
 // BytesToImage reads image from bytes and returns image.Image
@@ -33,8 +35,8 @@ func B64ToImage(img string) (image.Image, error) {
 	return image, err
 }
 
+// AreCredsComplete checks if entered credentials are complete and hostname is valid
 func AreCredsComplete(host string, user string, pw string) (string, string, string, error) {
-	// AreCredsComplete check if entered credentials are complete and hostname is valid
 	var err error = nil
 	host = strings.TrimSpace(host)
 	user = strings.TrimSpace(user)
@@ -53,8 +55,77 @@ func AreCredsComplete(host string, user string, pw string) (string, string, stri
 	return host, user, pw, err
 }
 
+// isHostnameValid checks hostname against some regex for basic validity
 func isHostnameValid(host string) bool {
-	// isHostnameValid checks hostname against some regex for basic validity
 	match, _ := regexp.Match(RE_HOSTNAME, []byte(host))
 	return match
+}
+
+// DoGUI adds function to be run on GTK Main loop / main thread
+func DoGUI(action func()) {
+	// Native GTK is not thread safe, and thus, gotk3's GTK bindings may not
+	// be used from other goroutines.  Instead, glib.IdleAdd() must be used
+	// to add a function to run in the GTK main loop when it is in an idle
+	// state. See:
+	// https://github.com/gotk3/gotk3-examples/blob/master/gtk-examples/goroutines/goroutines.go
+	glib.IdleAdd(action)
+}
+
+// login_flow check for completeness of creds, creates hash from them,
+// uses hash to authenticate against API endpoint, displays Message box with the result.
+// On success saves credentials to config
+func login_flow(host string, user string, pw string, ssl_disable bool) error {
+	host, user, pw, err := AreCredsComplete(host, user, pw)
+	if err != nil {
+		GUI_DialogError("Error: " + err.Error())
+		log.Println("Error:", err)
+		return err
+	}
+	// TODO: Remove all cleartext pws from logs?
+	log.Println("Login:", host, user, pw, ssl_disable)
+
+	hash_login := GetLoginHashFromPw(user, pw)
+	// TODO: This is blocking. Goroutine?
+	if err := APILogin(host, user, hash_login, ssl_disable); err != nil {
+		log.Println("Error:", err)
+		GUI_DialogError("Error: " + err.Error())
+		return err
+	}
+	hash_msg := GetMsgHashFromPw(user, pw)
+	conf = Config{host, user, hash_login, hash_msg, ssl_disable}
+	WriteConfigFile(conf)
+	log.Println("Ok: login workflow completed")
+	GUI_DialogInfo("Login successfull\nCredentials saved to config:\n" +
+		CONFIG_FILEPATH)
+	return nil
+}
+
+// register_flow check for completeness of creds, creates hash from them,
+// uses hash to register at API endpoint, displays Message box with the result.
+// On success saves credentials to config
+func register_flow(host string, user string, pw string, ssl_disable bool) error {
+	host, user, pw, err := AreCredsComplete(host, user, pw)
+	if err != nil {
+		GUI_DialogError("Error: " + err.Error())
+		log.Println("Error:", err)
+		return err
+	}
+	// TODO: Remove all cleartext pws from logs?
+	log.Println("Registration:", host, user, pw, ssl_disable)
+
+	hash_login := GetLoginHashFromPw(user, pw)
+	// TODO: This is blocking. Goroutine?
+	if err := APIRegister(host, user, hash_login, ssl_disable); err != nil {
+		log.Println("Error:", err)
+		GUI_DialogError("Error: " + err.Error())
+		return err
+	}
+	hash_msg := GetMsgHashFromPw(user, pw)
+	conf = Config{host, user, hash_login, hash_msg, ssl_disable}
+	WriteConfigFile(conf)
+	log.Println("Ok: Registration flow completed")
+
+	GUI_DialogInfo("Registration successfull\nCredentials saved to config:\n" +
+		CONFIG_FILEPATH)
+	return nil
 }
