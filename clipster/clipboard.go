@@ -26,11 +26,8 @@ func GetClipboard() (string, string) {
 // SetClipboard moves clip content to local clipboard and shows notification.
 // Deals with txt and img format
 func SetClipboard(clip Clips) {
-	if clip.Format == "txt" {
-		clipboard.Write(clipboard.FmtText, []byte(clip.TextDecrypted))
-		log.Println("Set Clipboard:", clip.TextDecrypted)
-		ShowNotification("Clipster – Got new clip", clip.TextDecrypted)
-	} else if clip.Format == "img" {
+	log.Println(clip)
+	if clip.Format == "img" {
 		imgBytes, err := base64.StdEncoding.DecodeString(clip.TextDecrypted)
 		if err != nil {
 			log.Panicln("Error:", err)
@@ -38,5 +35,9 @@ func SetClipboard(clip Clips) {
 		clipboard.Write(clipboard.FmtImage, imgBytes)
 		log.Println("Set Clipboard:", MSG_NOTIFY_GOT_IMAGE)
 		ShowNotification("Clipster – Got new clip", MSG_NOTIFY_GOT_IMAGE)
+	} else {
+		clipboard.Write(clipboard.FmtText, []byte(clip.TextDecrypted))
+		log.Println("Set Clipboard:", clip.TextDecrypted)
+		ShowNotification("Clipster – Got new clip", clip.TextDecrypted)
 	}
 }

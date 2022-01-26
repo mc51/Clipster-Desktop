@@ -5,18 +5,20 @@ import (
 	"errors"
 	"log"
 
+	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
+	"github.com/nfnt/resize"
 
 	"github.com/gen2brain/beeep"
 )
 
 var (
-	selected_list_row int
-	server            string
-	username          string
-	password          string
-	ssl_disable       bool
+	sel_list_row int
+	server       string
+	username     string
+	password     string
+	ssl_disable  bool
 )
 
 func ShowNotification(title string, body string) {
@@ -28,18 +30,6 @@ func ShowNotification(title string, body string) {
 	if err != nil {
 		log.Println(err)
 	}
-}
-
-func DownloadLastClipFlow() error {
-	return nil
-}
-
-func DownloadAllClipsFlow() error {
-	return nil
-}
-
-func ShareClipFlow() error {
-	return nil
 }
 
 // GUI_ConfigWindow displays the window for editing the configuration
@@ -59,7 +49,7 @@ func GUI_ConfigWindow() {
 		"form_username_changed_cb":       onUsernameChange,
 		"form_password_changed_cb":       onPasswordChange,
 		"btn_login_cred_clicked_cb":      func() { onLoginBtn(w) },
-		"btn_register_cred_clicked_cb":   onRegisterBtn,
+		"btn_register_cred_clicked_cb":   func() { onRegisterBtn(w) },
 		"btn_cancel_cred_clicked_cb":     func() { w.Close() },
 	}
 	builder.ConnectSignals(signals)
@@ -69,6 +59,70 @@ func GUI_ConfigWindow() {
 		w.Close()
 	})
 	w.ShowAll()
+}
+
+// GUI_AllClips displays the window containing all retrieved clips
+func GUI_AllClips(clips []Clips) {
+	builder, err := gtk.BuilderNewFromFile("./assets/clipster.glade")
+	errorCheck(err)
+
+	obj, err := builder.GetObject("win_clips")
+	errorCheck(err)
+	w, err := isWindow(obj)
+	errorCheck(err)
+
+	obj, err = builder.GetObject("list_clips")
+	errorCheck(err)
+	box, err := isListBox(obj)
+	errorCheck(err)
+
+	// Add clips to GUI Rows
+	for _, v := range clips {
+		row, _ := gtk.ListBoxRowNew()
+		row.SetSizeRequest(-1, 100)
+		// Create rows with content
+		if v.Format == "img" {
+			img_pixbuf, err := stringToImagePixbuf(v.TextDecrypted)
+			if err != nil {
+				log.Println("Error:", err)
+			}
+			img, _ := gtk.ImageNewFromPixbuf(img_pixbuf)
+			row.Add(img)
+			log.Println("Got image clip")
+		} else {
+			log.Println("Got text clip")
+			txt, _ := gtk.TextViewNew()
+			txt.SetEditable(false)
+			buffer, _ := txt.GetBuffer()
+			buffer.SetText(v.TextDecrypted)
+			row.Add(txt)
+		}
+		box.Add(row)
+	}
+
+	// Map the handlers to callback functions, and connect the signals to the Builder
+	signals := map[string]interface{}{
+		"list_clips_row_selected_cb": func(obj *gtk.ListBox) { sel_list_row = obj.GetSelectedRow().GetIndex() },
+		"btn_copy_clicked_cb":        func(obj *gtk.Button) { SetClipboard(clips[sel_list_row]) },
+		"btn_save_clicked_cb":        func(obj *gtk.Button) {},
+		"btn_cancel_clicked_cb":      func() { w.Close() },
+	}
+	builder.ConnectSignals(signals)
+
+	w.SetTitle("Clipster - Your Clips")
+	w.Connect("destroy", func() {
+		w.Close()
+	})
+	w.ShowAll()
+}
+
+// stringToImagePixbuf creates image from string, makes thumbnail and returns PixBuf
+func stringToImagePixbuf(text string) (*gdk.Pixbuf, error) {
+	img, err := B64ToImage(text)
+	img_thumb := resize.Thumbnail(THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT, img, resize.NearestNeighbor)
+	img_bytes, err := ImageToBytes(img_thumb)
+	img_pixbuf, err := gdk.PixbufNewFromBytesOnly(img_bytes)
+	return img_pixbuf, err
 }
 
 func createWindow(title string) *gtk.Window {
@@ -166,8 +220,8 @@ func onCancelMsgDialogBtn(d *gtk.MessageDialog) {
 
 func onSelectedRow(listbox *gtk.ListBox) {
 	log.Println("onSelectedRow", listbox)
-	selected_list_row = listbox.GetSelectedRow().GetIndex()
-	log.Println("onSelectedRow", selected_list_row)
+	sel_list_row = listbox.GetSelectedRow().GetIndex()
+	log.Println("onSelectedRow", sel_list_row)
 }
 
 func isWindow(obj glib.IObject) (*gtk.Window, error) {
@@ -200,6 +254,21 @@ func isListBox(obj glib.IObject) (*gtk.ListBox, error) {
 	return nil, errors.New("not a *gtk.ListBox")
 }
 
+func isListBoxRow(obj glib.IObject) (*gtk.ListBoxRow, error) {
+	// Make type assertion (as per gtk.go).
+	if row, ok := obj.(*gtk.ListBoxRow); ok {
+		return row, nil
+	}
+	return nil, errors.New("not a *gtk.ListBoxRow")
+}
+
+func isLabel(obj glib.IObject) (*gtk.Label, error) {
+	// Make type assertion (as per gtk.go).
+	if label, ok := obj.(*gtk.Label); ok {
+		return label, nil
+	}
+	return nil, errors.New("not a *gtk.Label")
+}
 func errorCheck(e error) {
 	if e != nil {
 		log.Panic("Gotk3 error:", e)

@@ -8,6 +8,7 @@ require (
 	github.com/gen2brain/beeep v0.0.0-20210529141713-5586760f0cc1
 	github.com/getlantern/systray v1.1.0
 	github.com/gotk3/gotk3 v0.6.1
+	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/spf13/viper v1.10.1
 	golang.design/x/clipboard v0.6.0
 	golang.org/x/crypto v0.0.0-20220112180741-5e0467b6c7ce

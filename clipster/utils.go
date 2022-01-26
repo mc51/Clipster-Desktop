@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"image"
+	"image/png"
 	"log"
 	"regexp"
 	"strings"
@@ -20,6 +21,14 @@ func BytesToImage(img []byte) (image.Image, error) {
 		log.Panicln("Error:", err)
 	}
 	return m, err
+}
+
+// ImageToBytes reads image and returns bytes
+func ImageToBytes(img image.Image) ([]byte, error) {
+	buf := new(bytes.Buffer)
+	err := png.Encode(buf, img)
+	img_bytes := buf.Bytes()
+	return img_bytes, err
 }
 
 // B64ToImage converts b64 encoded string of an image to image.Image
@@ -128,4 +137,55 @@ func register_flow(host string, user string, pw string, ssl_disable bool) error 
 	GUI_DialogInfo("Registration successfull\nCredentials saved to config:\n" +
 		CONFIG_FILEPATH)
 	return nil
+}
+
+// DownloadLastClipFlow downloads all clips as json from API
+// unencrypts the latest encrypted text
+// copies content to clipboard and shows notification
+func DownloadLastClipFlow() {
+	log.Println("DownloadLastClipFlow")
+	clips_encrypted, err := APIDownloadAllClips()
+	if err != nil {
+		ShowNotification("Clipster - Error", err.Error())
+		log.Println("Error:", err)
+		return
+	}
+	log.Printf("Clips: %+v", clips_encrypted)
+	last_clip := clips_encrypted[len(clips_encrypted)-1]
+	last_clip.TextDecrypted = Decrypt(last_clip.Text)
+	SetClipboard(last_clip)
+}
+
+// DownloadAllClipsFlow downloads all clips as json from API, unencrypts the encrypted texts
+// and display result in gui
+func DownloadAllClipsFlow() {
+	clips, err := APIDownloadAllClips()
+	if err != nil {
+		ShowNotification("Clipster - Error", err.Error())
+		log.Println("Error:", err)
+		return
+	}
+	log.Printf("Clips: %+v", clips)
+	for i := range clips {
+		clips[i].TextDecrypted = Decrypt(clips[i].Text)
+	}
+	DoGUI(func() { GUI_AllClips(clips) })
+}
+
+// ShareClipFlow gets current clipboard value, encrypts it
+// uploads it to server and shows notification
+func ShareClipFlow() {
+	log.Println("ShareClipFlow")
+	clip, format := GetClipboard()
+	clip_encrypted := Encrypt(clip)
+	if err := APIShareClip(clip_encrypted, format); err != nil {
+		ShowNotification("Clipster - Error", err.Error())
+		log.Println("Error:", err)
+		return
+	}
+	if format == "txt" {
+		ShowNotification("Clipster – Shared clip", clip)
+	} else if format == "img" {
+		ShowNotification("Clipster – Shared clip", MSG_NOTIFY_GOT_IMAGE)
+	}
 }

@@ -2,12 +2,24 @@
 <!-- Generated with glade 3.38.2 -->
 <interface>
   <requires lib="gtk+" version="3.24"/>
+  <object class="GtkTextBuffer" id="textbuffer1">
+    <property name="text" translatable="yes">Testing is important for Corona Virus mitigation and Test-Kits are widely available. However, there are stark differences in their quality: Some tests are really bad at detecting the Virus. This is partly because market approval is currently lax in order to meet the enormous demand. Consequently, customers need to make sure themselves, that they buy quality products. **To do so, they need to be informed.**   
+  
+In Germany we have reliable official data comparing the quality of a few hundred tests you can buy for home use. It comes from the German  Federal Institute for Vaccines and Biomedicines (Paul Ehrlich Institut). Unfortunately, the data is hard to find and only available in pdf format. This makes it troublesome to stay informed as a customer and make the right decision.  
+  
+That's why I've created the site [**https://corona.pw**](https://corona.pw)  
+  
+It automatically gets and extracts the data from the source and displays it in an interactive table. You can search for your specific test and also compare which ones are best. Also, it explains the measures used.  
+  
+If you are interested in the technology powering the site (Python, Flask, DataTables) everything is available in a [GitHub repo]([https://github.com/mc51/Corona-Test-Comparison/](https://github.com/mc51/Corona-Test-Comparison/).
+</property>
+  </object>
   <object class="GtkWindow" id="win_clips">
     <property name="can-focus">False</property>
+    <property name="hexpand">True</property>
     <property name="title" translatable="yes">Clipster - Your Clips</property>
     <property name="window-position">center-always</property>
-    <property name="default-width">800</property>
-    <property name="default-height">800</property>
+    <property name="default-height">400</property>
     <property name="destroy-with-parent">True</property>
     <property name="urgency-hint">True</property>
     <child>
@@ -16,40 +28,28 @@
         <property name="visible">True</property>
         <property name="can-focus">False</property>
         <property name="orientation">vertical</property>
+        <property name="column-homogeneous">True</property>
         <child>
           <object class="GtkScrolledWindow" id="scrolled_win_clips">
             <property name="visible">True</property>
             <property name="can-focus">True</property>
+            <property name="border-width">5</property>
             <property name="shadow-type">in</property>
-            <property name="min-content-width">800</property>
+            <property name="min-content-width">600</property>
             <property name="min-content-height">720</property>
-            <property name="max-content-width">800</property>
+            <property name="max-content-width">900</property>
             <property name="max-content-height">720</property>
+            <property name="propagate-natural-width">True</property>
+            <property name="propagate-natural-height">True</property>
             <child>
               <object class="GtkViewport">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
                 <child>
-                  <object class="GtkListBox" id="my_list">
+                  <object class="GtkListBox" id="list_clips">
                     <property name="visible">True</property>
                     <property name="can-focus">False</property>
-                    <signal name="row-selected" handler="my_list_row_selected_cb" swapped="no"/>
-                    <child>
-                      <object class="GtkListBoxRow" id="my_list_row">
-                        <property name="height-request">100</property>
-                        <property name="visible">True</property>
-                        <property name="can-focus">True</property>
-                        <property name="has-focus">True</property>
-                        <child>
-                          <object class="GtkImage">
-                            <property name="visible">True</property>
-                            <property name="can-focus">False</property>
-                            <property name="stock">gtk-floppy</property>
-                            <property name="icon_size">6</property>
-                          </object>
-                        </child>
-                      </object>
-                    </child>
+                    <signal name="row-selected" handler="list_clips_row_selected_cb" swapped="no"/>
                   </object>
                 </child>
               </object>
