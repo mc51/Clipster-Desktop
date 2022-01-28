@@ -1,4 +1,4 @@
-// Show GUI
+// Functions dealing with the GUI over gotk3
 package clipster
 
 import (
@@ -151,8 +151,8 @@ func createWindow(title string) *gtk.Window {
 // GUI_DialogError displays an error message dialog
 func GUI_DialogError(body string) {
 	w := createWindow("Clipster - Error")
-	msg := gtk.MessageDialogNew(w, gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR, gtk.BUTTONS_CLOSE,
-		body)
+	msg := gtk.MessageDialogNew(w, gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
+		gtk.BUTTONS_CLOSE, body)
 	msg.Connect("response", func() { msg.Destroy() })
 	msg.Run()
 }
@@ -160,8 +160,8 @@ func GUI_DialogError(body string) {
 // GUI_DialogInfo displays an info message dialog
 func GUI_DialogInfo(body string) {
 	w := createWindow("Clipster - Info")
-	msg := gtk.MessageDialogNew(w, gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_INFO, gtk.BUTTONS_OK,
-		body)
+	msg := gtk.MessageDialogNew(w, gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_INFO,
+		gtk.BUTTONS_OK, body)
 	msg.Connect("response", func() { msg.Destroy() })
 	msg.Run()
 }
@@ -231,36 +231,12 @@ func isButton(obj glib.IObject) (*gtk.Button, error) {
 	return nil, errors.New("not a *gtk.Button")
 }
 
-func isBox(obj glib.IObject) (*gtk.Box, error) {
-	// Make type assertion (as per gtk.go).
-	if box, ok := obj.(*gtk.Box); ok {
-		return box, nil
-	}
-	return nil, errors.New("not a *gtk.Box")
-}
-
 func isListBox(obj glib.IObject) (*gtk.ListBox, error) {
 	// Make type assertion (as per gtk.go).
 	if box, ok := obj.(*gtk.ListBox); ok {
 		return box, nil
 	}
 	return nil, errors.New("not a *gtk.ListBox")
-}
-
-func isListBoxRow(obj glib.IObject) (*gtk.ListBoxRow, error) {
-	// Make type assertion (as per gtk.go).
-	if row, ok := obj.(*gtk.ListBoxRow); ok {
-		return row, nil
-	}
-	return nil, errors.New("not a *gtk.ListBoxRow")
-}
-
-func isLabel(obj glib.IObject) (*gtk.Label, error) {
-	// Make type assertion (as per gtk.go).
-	if label, ok := obj.(*gtk.Label); ok {
-		return label, nil
-	}
-	return nil, errors.New("not a *gtk.Label")
 }
 
 func errorCheck(e error) {

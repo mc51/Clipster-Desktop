@@ -52,7 +52,7 @@ var (
 	ICON_FILENAME string
 )
 
-// init prepares the config paths and an icon temp file
+// init prepares the config paths and an writed an icon temp file to disk
 func init() {
 	initConfigPaths()
 	// writes icon file to a temp file for usage in notifications

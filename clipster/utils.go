@@ -143,24 +143,7 @@ func register_flow(host string, user string, pw string, ssl_disable bool) error 
 	return nil
 }
 
-// DownloadLastClipFlow downloads all clips as json from API
-// unencrypts the latest encrypted text
-// copies content to clipboard and shows notification
-func DownloadLastClipFlow() {
-	log.Println("DownloadLastClipFlow")
-	clips_encrypted, err := APIDownloadAllClips()
-	if err != nil {
-		ShowNotification("Clipster - Error", err.Error())
-		log.Println("Error:", err)
-		return
-	}
-	log.Printf("Clips: %+v", clips_encrypted)
-	last_clip := clips_encrypted[len(clips_encrypted)-1]
-	last_clip.TextDecrypted = Decrypt(last_clip.Text)
-	SetClipboard(last_clip)
-}
-
-// DownloadClipsFlow downloads clips from API, unencrypts text and
+// DownloadClipsFlow downloads all clips from API, unencrypts text and
 // displays result. If last_only == True, instead last clip is moved to clipboard
 func DownloadClipsFlow(last_only bool) {
 	clips, err := APIDownloadAllClips()
@@ -175,7 +158,6 @@ func DownloadClipsFlow(last_only bool) {
 		clips[i].TextDecrypted = Decrypt(clips[i].Text)
 		if clips[i].Format == "img" {
 			clips[i] = processClipTextToImages(clips[i])
-
 		}
 	}
 
@@ -223,17 +205,15 @@ func processClipTextToImages(clip Clips) Clips {
 	return clip
 }
 
-// ImageToDisk show file save dialog and saves file at chosen path
+// ImageToDisk shows file saving dialog and saves image file at chosen path
 func ImageToDisk(clip Clips) {
 
 	path := GUI_FileChooserDialog()
 	if path != "" {
-
 		if clip.Format != "img" {
 			GUI_DialogError("You can only save images to file!")
 			return
 		}
-
 		err := ioutil.WriteFile(path, clip.ImageBytes, 0644)
 		if err != nil {
 			log.Println("Error: saving file", err)
