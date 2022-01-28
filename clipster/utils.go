@@ -18,6 +18,15 @@ import (
 	"github.com/nfnt/resize"
 )
 
+// BytesToPixbuf takes Image in bytes and returns gdk.Pixbuf representation
+func BytesToPixbuf(img []byte) *gdk.Pixbuf {
+	i, err := gdk.PixbufNewFromBytesOnly(img)
+	if err != nil {
+		log.Println("Could not create icon", err)
+	}
+	return i
+}
+
 // BytesToImage reads bytes and returns image.Image
 func BytesToImage(img []byte) (image.Image, error) {
 	m, _, err := image.Decode(bytes.NewReader(img))

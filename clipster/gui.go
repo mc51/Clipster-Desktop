@@ -56,6 +56,7 @@ func GUI_ConfigWindow() {
 	w.Connect("destroy", func() {
 		w.Close()
 	})
+	w.SetIcon(ICON_PNG_PIXBUF)
 	w.ShowAll()
 }
 
@@ -70,6 +71,7 @@ func GUI_FileChooserDialog() string {
 		"gtk-save", gtk.RESPONSE_ACCEPT)
 	errorCheck(err)
 
+	dialog.SetIcon(ICON_PNG_PIXBUF)
 	dialog.SetDoOverwriteConfirmation(true)
 	dialog.SetCurrentName(DEFAULT_IMAGE_SAVE_NAME)
 	response := dialog.Run()
@@ -128,6 +130,7 @@ func GUI_AllClips(clips []Clips) {
 	}
 	builder.ConnectSignals(signals)
 
+	w.SetIcon(ICON_PNG_PIXBUF)
 	w.SetTitle("Clipster - Your Clips")
 	w.Connect("destroy", func() {
 		w.Close()

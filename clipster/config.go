@@ -28,7 +28,7 @@ const API_URI_REGISTER = "/register/"
 const API_URI_LOGIN = "/verify-user/"
 const API_REQ_TIMEOUT = 6
 
-const MAX_NOTIFICATION_LENGTH = 100
+const MAX_NOTIFICATION_LENGTH = 200
 const MSG_NOTIFY_GOT_IMAGE = "Got an image!"
 const THUMBNAIL_HEIGHT = 200
 const THUMBNAIL_WIDTH = 200
@@ -48,9 +48,10 @@ type Config struct {
 }
 
 var (
-	conf          Config
-	ICON_FILENAME string
-	GLADE_LAYOUT  string
+	conf            Config
+	ICON_FILENAME   string
+	GLADE_LAYOUT    string
+	ICON_PNG_PIXBUF = BytesToPixbuf(ICON_PNG_BYTES)
 )
 
 // init prepares the config paths and an writed an icon temp file to disk
