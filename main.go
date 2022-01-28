@@ -2,6 +2,7 @@
 package main
 
 import (
+	_ "embed"
 	"log"
 	"os"
 
@@ -12,7 +13,11 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 )
 
+//go:embed assets/clipster.glade
+var GLADE_LAYOUT string
+
 func main() {
+	clipster.GLADE_LAYOUT = GLADE_LAYOUT
 	mainthread.Run(run) // enables mainthread package and runs run in a separate goroutine
 }
 

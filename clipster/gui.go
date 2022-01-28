@@ -32,7 +32,7 @@ func ShowNotification(title string, body string) {
 
 // GUI_ConfigWindow displays the window for editing the configuration
 func GUI_ConfigWindow() {
-	builder, err := gtk.BuilderNewFromFile("./assets/clipster.glade")
+	builder, err := gtk.BuilderNewFromString(GLADE_LAYOUT)
 	errorCheck(err)
 
 	obj, err := builder.GetObject("win_creds")
@@ -85,7 +85,7 @@ func GUI_FileChooserDialog() string {
 
 // GUI_AllClips displays the window containing all retrieved clips
 func GUI_AllClips(clips []Clips) {
-	builder, err := gtk.BuilderNewFromFile("./assets/clipster.glade")
+	builder, err := gtk.BuilderNewFromString(GLADE_LAYOUT)
 	errorCheck(err)
 
 	obj, err := builder.GetObject("win_clips")

@@ -50,6 +50,7 @@ type Config struct {
 var (
 	conf          Config
 	ICON_FILENAME string
+	GLADE_LAYOUT  string
 )
 
 // init prepares the config paths and an writed an icon temp file to disk
