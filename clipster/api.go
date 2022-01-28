@@ -10,6 +10,8 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/gotk3/gotk3/gtk"
 )
 
 type Clips struct {
@@ -20,6 +22,8 @@ type Clips struct {
 	Device        string
 	Created_at    string
 	TextDecrypted string
+	ImageBytes    []byte
+	GtkThumb      *gtk.Image
 }
 
 // APIShareClip sends encrypted Clip to API endpoint for sharing

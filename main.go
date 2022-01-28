@@ -62,10 +62,10 @@ func onReady() {
 			select {
 			case <-mLastClip.ClickedCh:
 				log.Println("Get last Clip")
-				clipster.DownloadLastClipFlow()
+				clipster.DownloadClipsFlow(true)
 			case <-mAllClips.ClickedCh:
 				log.Println("Get all Clips")
-				clipster.DownloadAllClipsFlow()
+				clipster.DownloadClipsFlow(false)
 			case <-mShareClip.ClickedCh:
 				log.Println("Share Clip")
 				clipster.ShareClipFlow()

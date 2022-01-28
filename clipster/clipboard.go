@@ -28,11 +28,7 @@ func GetClipboard() (string, string) {
 func SetClipboard(clip Clips) {
 	log.Println(clip)
 	if clip.Format == "img" {
-		imgBytes, err := base64.StdEncoding.DecodeString(clip.TextDecrypted)
-		if err != nil {
-			log.Panicln("Error:", err)
-		}
-		clipboard.Write(clipboard.FmtImage, imgBytes)
+		clipboard.Write(clipboard.FmtImage, clip.ImageBytes)
 		log.Println("Set Clipboard:", MSG_NOTIFY_GOT_IMAGE)
 		ShowNotification("Clipster – Got new clip", MSG_NOTIFY_GOT_IMAGE)
 	} else {

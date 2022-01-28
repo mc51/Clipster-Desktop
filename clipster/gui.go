@@ -5,10 +5,8 @@ import (
 	"errors"
 	"log"
 
-	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
-	"github.com/nfnt/resize"
 
 	"github.com/gen2brain/beeep"
 )
@@ -61,6 +59,30 @@ func GUI_ConfigWindow() {
 	w.ShowAll()
 }
 
+// GUI_FileChooserDialog displays the dialog for saving a file to disk
+// and returns chosen filepath
+func GUI_FileChooserDialog() string {
+
+	var filename string
+	title := "Clipster - Chose save location"
+	dialog, err := gtk.FileChooserDialogNewWith2Buttons(title, nil, gtk.FILE_CHOOSER_ACTION_SAVE,
+		"gtk-cancel", gtk.RESPONSE_CANCEL,
+		"gtk-save", gtk.RESPONSE_ACCEPT)
+	errorCheck(err)
+
+	dialog.SetDoOverwriteConfirmation(true)
+	dialog.SetCurrentName(DEFAULT_IMAGE_SAVE_NAME)
+	response := dialog.Run()
+
+	if response == gtk.RESPONSE_ACCEPT {
+		chooser := dialog.FileChooser
+		filename = chooser.GetFilename()
+		log.Println("Filename", filename)
+	}
+	dialog.Destroy()
+	return filename
+}
+
 // GUI_AllClips displays the window containing all retrieved clips
 func GUI_AllClips(clips []Clips) {
 	builder, err := gtk.BuilderNewFromFile("./assets/clipster.glade")
@@ -77,24 +99,21 @@ func GUI_AllClips(clips []Clips) {
 	errorCheck(err)
 
 	// Add clips to GUI Rows
-	for _, v := range clips {
+	for _, clip := range clips {
 		row, _ := gtk.ListBoxRowNew()
 		row.SetSizeRequest(-1, 100)
 		// Create rows with content
-		if v.Format == "img" {
-			img_pixbuf, err := stringToImagePixbuf(v.TextDecrypted)
-			if err != nil {
-				log.Println("Error:", err)
-			}
-			img, _ := gtk.ImageNewFromPixbuf(img_pixbuf)
-			row.Add(img)
+		if clip.Format == "img" {
 			log.Println("Got image clip")
+			clip := processClipTextToImages(clip)
+			row.Add(clip.GtkThumb)
 		} else {
 			log.Println("Got text clip")
 			txt, _ := gtk.TextViewNew()
 			txt.SetEditable(false)
+			txt.SetWrapMode(gtk.WRAP_WORD_CHAR)
 			buffer, _ := txt.GetBuffer()
-			buffer.SetText(v.TextDecrypted)
+			buffer.SetText(clip.TextDecrypted)
 			row.Add(txt)
 		}
 		box.Add(row)
@@ -104,7 +123,7 @@ func GUI_AllClips(clips []Clips) {
 	signals := map[string]interface{}{
 		"list_clips_row_selected_cb": func(obj *gtk.ListBox) { sel_list_row = obj.GetSelectedRow().GetIndex() },
 		"btn_copy_clicked_cb":        func(obj *gtk.Button) { SetClipboard(clips[sel_list_row]) },
-		"btn_save_clicked_cb":        func(obj *gtk.Button) {},
+		"btn_save_clicked_cb":        func(obj *gtk.Button) { ImageToDisk(clips[sel_list_row]) },
 		"btn_cancel_clicked_cb":      func() { w.Close() },
 	}
 	builder.ConnectSignals(signals)
@@ -116,19 +135,10 @@ func GUI_AllClips(clips []Clips) {
 	w.ShowAll()
 }
 
-// stringToImagePixbuf creates image from string, makes thumbnail and returns PixBuf
-func stringToImagePixbuf(text string) (*gdk.Pixbuf, error) {
-	img, err := B64ToImage(text)
-	img_thumb := resize.Thumbnail(THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT, img, resize.NearestNeighbor)
-	img_bytes, err := ImageToBytes(img_thumb)
-	img_pixbuf, err := gdk.PixbufNewFromBytesOnly(img_bytes)
-	return img_pixbuf, err
-}
-
 func createWindow(title string) *gtk.Window {
 	w, err := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
 	if err != nil {
-		log.Fatal("Unable to create window:", err)
+		log.Fatalln("Unable to create window:", err)
 		return nil
 	}
 	w.SetTitle(title)
@@ -200,35 +210,18 @@ func onRegisterBtn(w *gtk.Window) {
 	}
 }
 
-func onCopyBtn(b *gtk.Button) {
-	log.Println("onCopyBtn", b)
-}
-
-func onSaveBtn() {
-	log.Println("onSaveBtn")
-}
-
-func onCancelBtn(window *gtk.Window) {
-	log.Println("onCancelBtn")
-	window.Close()
-}
-
-func onCancelMsgDialogBtn(d *gtk.MessageDialog) {
-	log.Println("onCancelDialogBtn")
-	d.Close()
-}
-
-func onSelectedRow(listbox *gtk.ListBox) {
-	log.Println("onSelectedRow", listbox)
-	sel_list_row = listbox.GetSelectedRow().GetIndex()
-	log.Println("onSelectedRow", sel_list_row)
-}
-
 func isWindow(obj glib.IObject) (*gtk.Window, error) {
 	if win, ok := obj.(*gtk.Window); ok {
 		return win, nil
 	}
 	return nil, errors.New("not a *gtk.Window")
+}
+
+func isFileChooserDialog(obj glib.IObject) (*gtk.FileChooserDialog, error) {
+	if dialog, ok := obj.(*gtk.FileChooserDialog); ok {
+		return dialog, nil
+	}
+	return nil, errors.New("not a *gtk.FileChooserDialog")
 }
 
 func isButton(obj glib.IObject) (*gtk.Button, error) {
@@ -269,6 +262,7 @@ func isLabel(obj glib.IObject) (*gtk.Label, error) {
 	}
 	return nil, errors.New("not a *gtk.Label")
 }
+
 func errorCheck(e error) {
 	if e != nil {
 		log.Panic("Gotk3 error:", e)

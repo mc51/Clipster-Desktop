@@ -7,14 +7,18 @@ import (
 	"errors"
 	"image"
 	"image/png"
+	"io/ioutil"
 	"log"
 	"regexp"
 	"strings"
 
+	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/glib"
+	"github.com/gotk3/gotk3/gtk"
+	"github.com/nfnt/resize"
 )
 
-// BytesToImage reads image from bytes and returns image.Image
+// BytesToImage reads bytes and returns image.Image
 func BytesToImage(img []byte) (image.Image, error) {
 	m, _, err := image.Decode(bytes.NewReader(img))
 	if err != nil {
@@ -156,9 +160,9 @@ func DownloadLastClipFlow() {
 	SetClipboard(last_clip)
 }
 
-// DownloadAllClipsFlow downloads all clips as json from API, unencrypts the encrypted texts
-// and display result in gui
-func DownloadAllClipsFlow() {
+// DownloadClipsFlow downloads clips from API, unencrypts text and
+// displays result. If last_only == True, instead last clip is moved to clipboard
+func DownloadClipsFlow(last_only bool) {
 	clips, err := APIDownloadAllClips()
 	if err != nil {
 		ShowNotification("Clipster - Error", err.Error())
@@ -166,10 +170,20 @@ func DownloadAllClipsFlow() {
 		return
 	}
 	log.Printf("Clips: %+v", clips)
+
 	for i := range clips {
 		clips[i].TextDecrypted = Decrypt(clips[i].Text)
+		if clips[i].Format == "img" {
+			clips[i] = processClipTextToImages(clips[i])
+
+		}
 	}
-	DoGUI(func() { GUI_AllClips(clips) })
+
+	if last_only {
+		SetClipboard(clips[len(clips)-1])
+	} else {
+		DoGUI(func() { GUI_AllClips(clips) })
+	}
 }
 
 // ShareClipFlow gets current clipboard value, encrypts it
@@ -187,5 +201,45 @@ func ShareClipFlow() {
 		ShowNotification("Clipster – Shared clip", clip)
 	} else if format == "img" {
 		ShowNotification("Clipster – Shared clip", MSG_NOTIFY_GOT_IMAGE)
+	}
+}
+
+// processClipTextToImages creates a gtk.Image Thumbnail from the original clip Image.
+// Also creates a bytes representation of the Image. Adds all that to the Clip
+func processClipTextToImages(clip Clips) Clips {
+
+	img, err := B64ToImage(clip.TextDecrypted)
+	img_thumb := resize.Thumbnail(THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT, img, resize.NearestNeighbor)
+	img_thumb_bytes, err := ImageToBytes(img_thumb)
+	img_thumb_pixbuf, err := gdk.PixbufNewFromBytesOnly(img_thumb_bytes)
+
+	clip.ImageBytes, err = ImageToBytes(img)
+	clip.GtkThumb, err = gtk.ImageNewFromPixbuf(img_thumb_pixbuf)
+
+	if err != nil {
+		log.Println(err)
+	}
+
+	return clip
+}
+
+// ImageToDisk show file save dialog and saves file at chosen path
+func ImageToDisk(clip Clips) {
+
+	path := GUI_FileChooserDialog()
+	if path != "" {
+
+		if clip.Format != "img" {
+			GUI_DialogError("You can only save images to file!")
+			return
+		}
+
+		err := ioutil.WriteFile(path, clip.ImageBytes, 0644)
+		if err != nil {
+			log.Println("Error: saving file", err)
+			GUI_DialogError("Error saving file: " + path + "\n" + err.Error())
+		}
+		log.Println("Saved file: " + path)
+		GUI_DialogInfo("File saved: " + path)
 	}
 }
