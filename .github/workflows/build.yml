@@ -6,29 +6,6 @@ on:
       - 'test*' # Push events to matching v*, i.e. v1.0, v20.15.10
 
 jobs:
-
-  createrelease:
-    name: Create Release
-    runs-on: [ubuntu-latest]
-    steps:
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
-        draft: false
-        prerelease: false
-    - name: Output Release URL File
-      run: echo "${{ steps.create_release.outputs.upload_url }}" > release_url.txt
-    - name: Save Release URL File for publish
-      uses: actions/upload-artifact@v1
-      with:
-        name: release_url
-        path: release_url.txt
-
   build:
     name: Build packages
     needs: createrelease
@@ -41,7 +18,8 @@ jobs:
           - os: windows-latest
             TARGET: windows
             CMD_PRE_BUILD: |
-              go get github.com/akavel/rsrc && rsrc -ico assets/clipster_icon_64.ico
+              echo 'export PATH=/c/msys64/usr/bin:$PATH' >> ~/.bashrc
+              source ~/.bashrc
               pacman -S mingw-w64-x86_64-gtk3 mingw-w64-x86_64-toolchain base-devel glib2-devel
               sed -i -e 's/-Wl,-luuid/-luuid/g' /mingw64/lib/pkgconfig/gdk-3.0.pc
             CMD_BUILD: go mod tidy && go build -o build/clipster_win.exe -ldflags "-H=windowsgui -s -w" . && cd build && powershell Compress-Archive clipster_win.exe clipster_win.zip
@@ -66,7 +44,7 @@ jobs:
     - name: Pre build for ${{matrix.TARGET}}
       run: ${{matrix.CMD_PRE_BUILD}}
       if: runner.os == 'Windows'
-      shell: C:\msys64\usr\bin\bash.exe {0}
+      shell: bash
     - name: Build Go for ${{matrix.TARGET}}
       run: ${{matrix.CMD_BUILD}}
     - name: Post build for ${{matrix.TARGET}}
