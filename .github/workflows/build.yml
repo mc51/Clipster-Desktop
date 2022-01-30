@@ -49,3 +49,4 @@ jobs:
       shell: bash
     - name: Build Go for ${{matrix.TARGET}}
       run: ${{matrix.CMD_BUILD}}
+      shell: bash
