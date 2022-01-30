@@ -8,7 +8,7 @@ on:
 jobs:
   build:
     name: Build packages
-    needs: createrelease
+    # needs: createrelease
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
