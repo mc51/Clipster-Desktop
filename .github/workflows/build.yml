@@ -20,7 +20,7 @@ jobs:
             CMD_PRE_BUILD: |
               pacman -S --noconfirm mingw-w64-x86_64-gtk3 mingw-w64-x86_64-toolchain base-devel glib2-devel
               sed -i -e 's/-Wl,-luuid/-luuid/g' /mingw64/lib/pkgconfig/gdk-3.0.pc
-            CMD_BUILD: go mod tidy -compat=1.17 && go build -o build/clipster_win.exe -ldflags "-H=windowsgui -s -w" . && cd build && powershell Compress-Archive clipster_win.exe clipster_win.zip
+            CMD_BUILD: go mod tidy -compat="1.17" && go build -o build/clipster_win.exe -ldflags "-H=windowsgui -s -w" . && cd build && powershell Compress-Archive clipster_win.exe clipster_win.zip
             OUT_FILE_NAME: clipster_win.zip
             ASSET_MIME: application/zip  # application/vnd.microsoft.portable-executable
     steps:
