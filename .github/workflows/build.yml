@@ -49,7 +49,6 @@ jobs:
     - name: switch git-bash shell to msys2 shell by adding msys2 path to PATH front
       run: |
         echo "C:\msys64\usr\bin" >> $GITHUB_PATH
-        pkg-config --libs gio-2.0
       shell: bash
       if: runner.os == 'Windows'
     - name: Pre build for ${{matrix.TARGET}}
