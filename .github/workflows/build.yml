@@ -18,8 +18,10 @@ jobs:
           - os: windows-latest
             TARGET: windows
             CMD_PRE_BUILD: |
+              ls -lah /mingw64/include
+              ls -lah /msys64/mingw64/include
               export PATH=/mingw64/bin:$PATH
-              export PKG_CONFIG_PATH=/mingw64/include:/mingw64/lib:$PKG_CONFIG_PATH
+              export PKG_CONFIG_PATH=/mingw64/include:/mingw64/lib::/msys64/mingw64/include:/msys64/mingw64/lib:$PKG_CONFIG_PATH
               pacman -S --needed --noconfirm mingw-w64-x86_64-gtk3 mingw-w64-x86_64-toolchain base-devel glib2-devel
               sed -i -e 's/-Wl,-luuid/-luuid/g' /mingw64/lib/pkgconfig/gdk-3.0.pc
               env
