@@ -18,9 +18,11 @@ jobs:
           - os: windows-latest
             TARGET: windows
             CMD_PRE_BUILD: |
+              export PKG_CONFIG_PATH=/mingw64/bin:$PKG_CONFIG_PATH
               pacman -S --noconfirm mingw-w64-x86_64-gtk3 mingw-w64-x86_64-toolchain base-devel glib2-devel
               sed -i -e 's/-Wl,-luuid/-luuid/g' /mingw64/lib/pkgconfig/gdk-3.0.pc
               env
+              echo $PATH
               pkg-config --libs gio-2.0
             CMD_BUILD: |
               go mod tidy -compat="1.17"
@@ -47,7 +49,6 @@ jobs:
     - name: switch git-bash shell to msys2 shell by adding msys2 path to PATH front
       run: |
         echo "C:\msys64\usr\bin" >> $GITHUB_PATH
-        export PKG_CONFIG_PATH=/mingw64/bin:$PKG_CONFIG_PATH
         pkg-config --libs gio-2.0
       shell: bash
       if: runner.os == 'Windows'
