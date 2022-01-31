@@ -18,15 +18,11 @@ jobs:
           - os: windows-latest
             TARGET: windows
             CMD_PRE_BUILD: |
-              ls -lah /mingw64/include
               export PATH=/mingw64/bin:$PATH
               export PKG_CONFIG_PATH=/mingw64/lib/pkgconfig:$PKG_CONFIG_PATH
               pacman -S --needed --noconfirm mingw-w64-x86_64-gtk3 mingw-w64-x86_64-toolchain base-devel glib2-devel
               sed -i -e 's/-Wl,-luuid/-luuid/g' /mingw64/lib/pkgconfig/gdk-3.0.pc
-              ls -lah /mingw64/include
-              env
-              echo $PATH
-              pkg-config --libs gio-2.0
+              pkg-config --cflags gio-2.0
             CMD_BUILD: |
               go mod tidy -compat="1.17"
               go build -x -v -o build/clipster_win.exe -ldflags "-H=windowsgui -s -w" .
