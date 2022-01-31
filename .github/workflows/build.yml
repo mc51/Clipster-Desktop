@@ -18,11 +18,11 @@ jobs:
           - os: windows-latest
             TARGET: windows
             CMD_PRE_BUILD: |
-              tree /mingw64
               export PATH=/mingw64/bin:$PATH
               export PKG_CONFIG_PATH=/mingw64/lib/pkgconfig
               pacman -S --needed --noconfirm mingw-w64-x86_64-gtk3 mingw-w64-x86_64-toolchain base-devel glib2-devel
               sed -i -e 's/-Wl,-luuid/-luuid/g' /mingw64/lib/pkgconfig/gdk-3.0.pc
+              ls -lah /mingw64/include
               which pkg-config
               pkg-config --cflags gio-2.0
             CMD_BUILD: |
