@@ -83,9 +83,9 @@ jobs:
         update-conda: true
         conda-channels: conda-forge
       if: runner.os == 'macOS'
-    - name: Resolve dependencies for ${{matrix.TARGET}}
+    - name: Resolve dependencies for ${{ matrix.TARGET }}
       if: runner.os == 'Linux' || runner.os == 'macOS'
-      run: ${{matrix.CMD_RESOLVE_DEPS}}
+      run: ${{ matrix.CMD_RESOLVE_DEPS }}
     - name: Install Go
       uses: actions/setup-go@v2
       with:
@@ -103,11 +103,11 @@ jobs:
           base-devel
           glib2-devel
       if: runner.os == 'Windows'
-    - name: Build Go for ${{matrix.TARGET}}
-      run: ${{matrix.CMD_BUILD}}
-      shell: ${{matrix.SHELL}}
-    - name: Post build for ${{matrix.TARGET}}
-      run: ${{matrix.CMD_POST_BUILD}}
+    - name: Build Go for ${{ matrix.TARGET }}
+      run: ${{ matrix.CMD_BUILD }}
+      shell: ${{ matrix.SHELL }}
+    - name: Post build for ${{ matrix.TARGET }}
+      run: ${{ matrix.CMD_POST_BUILD }}
       if: runner.os == 'macOS'
     - name: Load Release URL File from release job
       uses: actions/download-artifact@v1
