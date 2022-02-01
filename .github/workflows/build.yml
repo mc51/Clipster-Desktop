@@ -1,35 +1,79 @@
-name: Test-Build-Windows
+name: Build
 
 on:
   push:
     tags:
-      - 'test*' # Push events to matching v*, i.e. v1.0, v20.15.10
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
 
 jobs:
+
+  createrelease:
+    name: Create Release
+    runs-on: [ubuntu-latest]
+    steps:
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
+    - name: Output Release URL File
+      run: echo "${{ steps.create_release.outputs.upload_url }}" > release_url.txt
+    - name: Save Release URL File for publish
+      uses: actions/upload-artifact@v1
+      with:
+        name: release_url
+        path: release_url.txt
+
   build:
     name: Build packages
-    # needs: createrelease
+    needs: createrelease
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         go-version: [1.17.x]
-        os: [windows-latest]
+        os: [macos-10.15, ubuntu-latest, windows-latest]
         include:
+          - os: macos-10.15
+            TARGET: macos
+            SHELL: bash
+            CMD_RESOLVE_DEPS: conda install -y -q -c conda-forge gtk3 glib
+            CMD_BUILD: |
+              export PKG_CONFIG_PATH="$CONDA/lib/pkgconfig"
+              go mod tidy -compat="1.17"
+              go build -o build/clipster_mac -ldflags "-s -w" .
+            OUT_FILE_NAME: clipster_mac.zip
+            ASSET_MIME: application/zip
+            CMD_POST_BUILD: |
+              git clone https://github.com/mc51/gtk-mac-bundler
+              cd gtk-mac-bundler && make install
+              cd ../ && export PKG_CONFIG_PATH="$CONDA/lib/pkgconfig"
+              ~/.local/bin/gtk-mac-bundler ./build/bundle/clipster.bundle
+              ls -lah && cd build && zip -r9 clipster_mac clipster_mac.app/
+          - os: ubuntu-latest
+            TARGET: linux
+            SHELL: bash
+            CMD_RESOLVE_DEPS: sudo apt-get update && sudo apt-get -y install libgtk-3-dev
+            CMD_BUILD: |
+              go mod tidy -compat="1.17"
+              go build -o build/clipster_linux -ldflags "-s -w" .
+              cd build && zip -r9 clipster_linux clipster_linux
+            OUT_FILE_NAME: clipster_linux.zip
+            ASSET_MIME: application/zip  # application/octet-stream
           - os: windows-latest
             TARGET: windows
-            CMD_PRE_BUILD: |
-              # export PATH=/mingw64/bin:$PATH
-              # export PKG_CONFIG_PATH=/mingw64/lib/pkgconfig
-              sed -i -e 's/-Wl,-luuid/-luuid/g' /mingw64/lib/pkgconfig/gdk-3.0.pc
-              which pkg-config
-              pkg-config --cflags --libs gio-2.0
+            SHELL: msys2 {0}
             CMD_BUILD: |
-              pkg-config --cflags --libs gio-2.0
+              sed -i -e 's/-Wl,-luuid/-luuid/g' /mingw64/lib/pkgconfig/gdk-3.0.pc  # fix bug
               go mod tidy -compat="1.17"
               go build -x -v -o build/clipster_win.exe -ldflags "-H=windowsgui -s -w" .
               cd build && powershell Compress-Archive clipster_win.exe clipster_win.zip
             OUT_FILE_NAME: clipster_win.zip
-            ASSET_MIME: application/zip
+            ASSET_MIME: application/zip  # application/vnd.microsoft.portable-executable
     steps:
     - uses: s-weigand/setup-conda@v1
       with:
@@ -57,15 +101,28 @@ jobs:
           base-devel
           glib2-devel
       if: runner.os == 'Windows'
-    # - name: switch git-bash shell to msys2 shell by adding msys2 path to PATH front
-    #   run: |
-    #     echo "C:\msys64\usr\bin" >> $GITHUB_PATH
-    #   shell: bash
-    #   if: runner.os == 'Windows'
-    - name: Pre build for ${{matrix.TARGET}}
-      run: ${{matrix.CMD_PRE_BUILD}}
-      if: runner.os == 'Windows'
-      shell: msys2 {0}
     - name: Build Go for ${{matrix.TARGET}}
       run: ${{matrix.CMD_BUILD}}
-      shell: msys2 {0}
+    - name: Post build for ${{matrix.TARGET}}
+      run: ${{matrix.CMD_POST_BUILD}}
+      if: runner.os == 'macOS'
+    - name: Load Release URL File from release job
+      uses: actions/download-artifact@v1
+      with:
+        name: release_url
+    - name: Get Release File Name & Upload URL
+      id: get_release_info
+      shell: bash
+      run: |
+        value=`cat release_url/release_url.txt`
+        echo ::set-output name=upload_url::$value
+    - name: Upload Release Asset
+      id: upload-release-asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.get_release_info.outputs.upload_url }}
+        asset_path: ./build/${{ matrix.OUT_FILE_NAME}}
+        asset_name: ${{ matrix.OUT_FILE_NAME}}
+        asset_content_type: ${{ matrix.ASSET_MIME}}
