@@ -105,12 +105,7 @@ jobs:
       if: runner.os == 'Windows'
     - name: Build Go for ${{ matrix.TARGET }}
       run: ${{ matrix.CMD_BUILD }}
-      shell: bash
-      if: runner.os == 'Linux' || runner.os == 'macOS'
-    - name: Build Go for ${{ matrix.TARGET }}
-      run: ${{ matrix.CMD_BUILD }}
-      shell: msys2 {0}
-      if: runner.os == 'Windows'
+      shell: ${{ matrix.SHELL }}
     - name: Post build for ${{ matrix.TARGET }}
       run: ${{ matrix.CMD_POST_BUILD }}
       if: runner.os == 'macOS'
