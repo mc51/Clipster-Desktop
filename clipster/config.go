@@ -28,6 +28,12 @@ const API_URI_REGISTER = "/register/"
 const API_URI_LOGIN = "/verify-user/"
 const API_REQ_TIMEOUT = 6
 
+const MAX_NOTIFICATION_LENGTH = 200
+const MSG_NOTIFY_GOT_IMAGE = "Got an image!"
+const THUMBNAIL_HEIGHT = 200
+const THUMBNAIL_WIDTH = 200
+const DEFAULT_IMAGE_SAVE_NAME = "myclip.png"
+
 // Must be same as the other clients
 const HASH_ITERS_LOGIN = 20000
 const HASH_ITERS_MSG = 10000
@@ -42,11 +48,13 @@ type Config struct {
 }
 
 var (
-	conf          Config
-	ICON_FILENAME string
+	conf            Config
+	ICON_FILENAME   string
+	GLADE_LAYOUT    string
+	ICON_PNG_PIXBUF = BytesToPixbuf(ICON_PNG_BYTES)
 )
 
-// init prepares the config paths and an icon temp file
+// init prepares the config paths and an writed an icon temp file to disk
 func init() {
 	initConfigPaths()
 	// writes icon file to a temp file for usage in notifications

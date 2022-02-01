@@ -1,6 +1,7 @@
 # Binaries for programs and plugins
 *.swp
 *.dylib
+build/clipster*
 !build/clipster_mac.app/*
 !build/clipster_mac.app/Contents/Resources/lib/*.dylib
 !build/bundle/gtk3-launcher.sh

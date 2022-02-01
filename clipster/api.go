@@ -10,22 +10,29 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/gotk3/gotk3/gtk"
 )
 
 type Clips struct {
-	Id         int
-	User       string
-	Text       string
-	Device     string
-	Created_at string
+	Id            int
+	User          string
+	Text          string
+	Format        string
+	Device        string
+	Created_at    string
+	TextDecrypted string
+	ImageBytes    []byte
+	GtkThumb      *gtk.Image
 }
 
-func APIShareClip(clip string) error {
-	// APIShareClip sends encrypted Clip to API endpoint for sharing
+// APIShareClip sends encrypted Clip to API endpoint for sharing
+func APIShareClip(clip string, format string) error {
 	url := conf.Server + API_URI_COPY_PASTE
 	payload, err := json.Marshal(map[string]string{
 		"text":   clip,
 		"device": "desktop",
+		"format": format,
 	})
 	if err != nil {
 		log.Println("Error", err)
@@ -39,7 +46,7 @@ func APIShareClip(clip string) error {
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
-	req.SetBasicAuth("m", conf.Hash_login)
+	req.SetBasicAuth(conf.Username, conf.Hash_login)
 
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: conf.Disable_ssl_cert_check},
@@ -66,8 +73,8 @@ func APIShareClip(clip string) error {
 	}
 }
 
+// APIDownloadAllClips retrieves all encrypted Clips from server and returns them as Clips struct
 func APIDownloadAllClips() ([]Clips, error) {
-	// APIDownloadAllClips retrieves all encrypted Clips from server and returns them as Clips struct
 	var clips []Clips
 	url := conf.Server + API_URI_COPY_PASTE
 	req, err := http.NewRequest(http.MethodGet, url, nil)
@@ -77,7 +84,7 @@ func APIDownloadAllClips() ([]Clips, error) {
 	}
 
 	req.Header.Set("Accept", "application/json")
-	req.SetBasicAuth("m", conf.Hash_login)
+	req.SetBasicAuth(conf.Username, conf.Hash_login)
 
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: conf.Disable_ssl_cert_check},
@@ -115,8 +122,8 @@ func APIDownloadAllClips() ([]Clips, error) {
 	}
 }
 
+// APIRegister registers new account at API endpoint using hash created from creds
 func APIRegister(host string, user string, hash_login string, ssl_disable bool) error {
-	// APIRegister registers new account at API endpoint using hash created from creds
 	url := host + API_URI_REGISTER
 	payload, err := json.Marshal(map[string]string{
 		"username": user,
@@ -155,13 +162,12 @@ func APIRegister(host string, user string, hash_login string, ssl_disable bool) 
 			log.Println("Error:", err)
 			return err
 		}
-		log.Println("Error: registration failed", string(body))
 		return errors.New("registration failed: " + string(body))
 	}
 }
 
+// APILogin authenticates against API endpoint using hash created from creds
 func APILogin(host string, user string, hash_login string, ssl_disable bool) error {
-	// APILogin authenticates against API endpoint using hash created from creds
 	url := host + API_URI_LOGIN
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
@@ -170,7 +176,7 @@ func APILogin(host string, user string, hash_login string, ssl_disable bool) err
 	}
 
 	req.Header.Set("Accept", "application/json")
-	req.SetBasicAuth("m", hash_login)
+	req.SetBasicAuth(user, hash_login)
 
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: ssl_disable},
@@ -192,7 +198,6 @@ func APILogin(host string, user string, hash_login string, ssl_disable bool) err
 			log.Println("Error:", err)
 			return err
 		}
-		log.Println("Error: login failed", string(body))
 		return errors.New("login failed: " + string(body))
 	}
 }

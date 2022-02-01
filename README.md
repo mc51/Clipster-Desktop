@@ -59,7 +59,8 @@ Clipster will add an Icon to your system tray which you can click for opening up
 - [x] Add clipboard history: share multiple Clips
 - [x] Create Go version
 - [x] Add auto start feature
-- [ ] Support image sharing
+- [x] Switch GUI from goey to gotk3
+- [x] Support image sharing
 
 ## Contributions
 
@@ -67,9 +68,9 @@ Contributions are very welcome. If you come across a bug, please open an issue. 
 
 ## Credits
 
-- GUI based on [goey](https://pkg.go.dev/bitbucket.org/rj/goey)
+- GUI based on [gotk3](https://github.com/gotk3/gotk3) / GTK3
 - [Systray](https://pkg.go.dev/github.com/getlantern/systray) for tray icon and menu
 - Notifications using [beep](https://github.com/gen2brain/beeep)
 - Config by [Viper](https://github.com/spf13/viper)
 - Crypto using [PBKDF2](https://pkg.go.dev/golang.org/x/crypto/pbkdf2) and [Fernet](https://github.com/fernet/fernet-go)
-- [Clipboard](https://github.com/golang-design/clipboard)
+- [Clipboard](https://github.com/golang-design/clipboard) functions

@@ -35,29 +35,45 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        go-version: [1.16.x]
-        os: [macos-10.15, ubuntu-latest, windows-latest]
+        go-version: [1.17.x]
+        os: [macos-10.15, ubuntu-latest, windows-2019]
         include:
           - os: macos-10.15
             TARGET: macos
+            SHELL: bash
             CMD_RESOLVE_DEPS: conda install -y -q -c conda-forge gtk3 glib
-            CMD_BUILD: export PKG_CONFIG_PATH="$CONDA/lib/pkgconfig" && go mod tidy && go build -o build/clipster_mac -ldflags "-s -w" .
+            CMD_BUILD: |
+              export PKG_CONFIG_PATH="$CONDA/lib/pkgconfig"
+              go mod tidy -compat="1.17"
+              go build -o build/clipster_mac -ldflags "-s -w" .
             OUT_FILE_NAME: clipster_mac.zip
             ASSET_MIME: application/zip
             CMD_POST_BUILD: |
-              git clone https://github.com/mc51/gtk-mac-bundler && cd gtk-mac-bundler && make install
-              cd ../ && export PKG_CONFIG_PATH="$CONDA/lib/pkgconfig" && ~/.local/bin/gtk-mac-bundler ./build/bundle/clipster.bundle
+              git clone https://github.com/mc51/gtk-mac-bundler
+              cd gtk-mac-bundler && make install
+              cd ../ && export PKG_CONFIG_PATH="$CONDA/lib/pkgconfig"
+              ~/.local/bin/gtk-mac-bundler ./build/bundle/clipster.bundle
               ls -lah && cd build && zip -r9 clipster_mac clipster_mac.app/
           - os: ubuntu-latest
             TARGET: linux
-            CMD_RESOLVE_DEPS: sudo apt-get update && sudo apt-get -y install libgtk-3-dev
-            CMD_BUILD: go mod tidy && go build -o build/clipster_linux -ldflags "-s -w" . && cd build && zip -r9 clipster_linux clipster_linux
+            SHELL: bash
+            CMD_RESOLVE_DEPS: |
+              sudo apt-get update
+              sudo apt-get -y install libgtk-3-dev libappindicator3-dev
+            CMD_BUILD: |
+              go mod tidy -compat="1.17"
+              go build -o build/clipster_linux -ldflags "-s -w" .
+              cd build && zip -r9 clipster_linux clipster_linux
             OUT_FILE_NAME: clipster_linux.zip
             ASSET_MIME: application/zip  # application/octet-stream
-          - os: windows-latest
+          - os: windows-2019
             TARGET: windows
-            CMD_PRE_BUILD: go get github.com/akavel/rsrc && rsrc -ico assets/clipster_icon_64.ico
-            CMD_BUILD: go mod tidy && go build -o build/clipster_win.exe -ldflags "-H=windowsgui -s -w" . && cd build && powershell Compress-Archive clipster_win.exe clipster_win.zip
+            SHELL: msys2 {0}
+            CMD_BUILD: |
+              sed -i -e 's/-Wl,-luuid/-luuid/g' /mingw64/lib/pkgconfig/gdk-3.0.pc  # fix bug
+              go mod tidy -compat="1.17"
+              go build -x -v -o build/clipster_win.exe -ldflags "-H=windowsgui -s -w" .
+              cd build && powershell Compress-Archive clipster_win.exe clipster_win.zip
             OUT_FILE_NAME: clipster_win.zip
             ASSET_MIME: application/zip  # application/vnd.microsoft.portable-executable
     steps:
@@ -67,22 +83,36 @@ jobs:
         update-conda: true
         conda-channels: conda-forge
       if: runner.os == 'macOS'
-    - name: Resolve dependencies for ${{matrix.TARGET}}
+    - name: Resolve dependencies for ${{ matrix.TARGET }}
       if: runner.os == 'Linux' || runner.os == 'macOS'
-      run: ${{matrix.CMD_RESOLVE_DEPS}}
+      run: ${{ matrix.CMD_RESOLVE_DEPS }}
     - name: Install Go
       uses: actions/setup-go@v2
       with:
         go-version: ${{ matrix.go-version }}
     - name: Checkout repo
       uses: actions/checkout@v2
-    - name: Pre build for ${{matrix.TARGET}}
-      run: ${{matrix.CMD_PRE_BUILD}}
+    - name: Install and use MINGW64
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW64
+        path-type: inherit
+        install: >-
+          mingw-w64-x86_64-gtk3
+          mingw-w64-x86_64-toolchain
+          base-devel
+          glib2-devel
       if: runner.os == 'Windows'
-    - name: Build Go for ${{matrix.TARGET}}
-      run: ${{matrix.CMD_BUILD}}
-    - name: Post build for ${{matrix.TARGET}}
-      run: ${{matrix.CMD_POST_BUILD}}
+    - name: Build Go for ${{ matrix.TARGET }}
+      run: ${{ matrix.CMD_BUILD }}
+      shell: bash
+      if: runner.os == 'Linux' || runner.os == 'macOS'
+    - name: Build Go for ${{ matrix.TARGET }}
+      run: ${{ matrix.CMD_BUILD }}
+      shell: msys2 {0}
+      if: runner.os == 'Windows'
+    - name: Post build for ${{ matrix.TARGET }}
+      run: ${{ matrix.CMD_POST_BUILD }}
       if: runner.os == 'macOS'
     - name: Load Release URL File from release job
       uses: actions/download-artifact@v1

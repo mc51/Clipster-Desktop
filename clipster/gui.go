@@ -1,314 +1,249 @@
-// Show GUI
+// Functions dealing with the GUI over gotk3
 package clipster
 
 import (
-	"fmt"
+	"errors"
 	"log"
-	"os"
-	"runtime"
 
-	"clipster/goey"
-	"clipster/goey/base"
-	"clipster/goey/loop"
+	"github.com/gotk3/gotk3/glib"
+	"github.com/gotk3/gotk3/gtk"
 
 	"github.com/gen2brain/beeep"
 )
 
 var (
-	mainWindow *goey.Window
+	sel_list_row int
+	server       string
+	username     string
+	password     string
+	ssl_disable  bool
 )
 
 func ShowNotification(title string, body string) {
 	// TODO: Icon in MacOS is default -> I guess it display bundle icon when there is one
+	if len(body) >= MAX_NOTIFICATION_LENGTH {
+		body = body[0:MAX_NOTIFICATION_LENGTH] + " [...]"
+	}
 	err := beeep.Notify(title, body, ICON_FILENAME)
 	if err != nil {
 		log.Println(err)
 	}
 }
 
-func StartGUIInBackground() {
-	// For GTK to start main loop without showing a window (to show trayicon)
-	log.Println("StartGui")
-	err := loop.Run(createHiddenWindow)
-	if err != nil {
-		log.Fatalln("Error:", err)
+// GUI_ConfigWindow displays the window for editing the configuration
+func GUI_ConfigWindow() {
+	builder, err := gtk.BuilderNewFromString(GLADE_LAYOUT)
+	errorCheck(err)
+
+	obj, err := builder.GetObject("win_creds")
+	errorCheck(err)
+	w, err := isWindow(obj)
+	errorCheck(err)
+
+	// Map the handlers to callback functions, and connect the signals to the Builder
+	signals := map[string]interface{}{
+		"form_server_address_changed_cb": onServerChange,
+		"form_disable_ssl_toggled_cb":    onSSLToggle,
+		"form_username_changed_cb":       onUsernameChange,
+		"form_password_changed_cb":       onPasswordChange,
+		"btn_login_cred_clicked_cb":      func() { onLoginBtn(w) },
+		"btn_register_cred_clicked_cb":   func() { onRegisterBtn(w) },
+		"btn_cancel_cred_clicked_cb":     func() { w.Close() },
 	}
-	log.Println("End StartGUIInBackground")
-}
+	builder.ConnectSignals(signals)
 
-func createHiddenWindow() error {
-	// createHiddenWindow keeps GTK main loop running without showing a window
-	// to keep tray icon available
-	log.Println("createHiddenWindow")
-	// this need adapted goey function without gtk call to .show()
-	_, err := goey.NewHiddenWindow("", nil)
-	if err != nil {
-		log.Fatalln("Error:", err)
-		return err
-	}
-	return nil
-}
-
-func GUIAskForCredentials() error {
-	log.Println("GUIAskForCredentials")
-	os.Setenv("GOEY_SIZE", "300x300")
-	w, err := goey.NewWindow("Clipster – Enter Credentials", renderCredsWindow())
-	if err != nil {
-		return err
-	}
-	icon, err := IconAsImageFromBytes(ICON_PNG_BYTES)
-	if err != nil {
-		return err
-	}
-	w.SetScroll(false, false)
-	w.SetIcon(icon)
-	mainWindow = w
-	return nil
-}
-
-func GUIShowClips(clips []string) error {
-	log.Println("GUIShowClips")
-	os.Setenv("GOEY_SIZE", "600x100")
-	w, err := goey.NewWindow("Clipster – Your Clips", renderShowClipsWindows(clips))
-	if err != nil {
-		return err
-	}
-	icon, err := IconAsImageFromBytes(ICON_PNG_BYTES)
-	if err != nil {
-		return err
-	}
-	w.SetScroll(false, false)
-	w.SetIcon(icon)
-	mainWindow = w
-	return nil
-}
-
-func guiDo(f func() error) {
-	// guiDo runs a GUI function on the appropriate thread depending on the os
-	log.Println("guiDo")
-	if runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
-		// run f on main (GUI) thread
-		err := loop.Do(f)
-		if err != nil {
-			log.Panicln("Error:", err)
-		}
-	} else if runtime.GOOS == "windows" {
-		// start new thread for f
-		err := loop.Run(f)
-		if err != nil {
-			log.Panicln("Error:", err)
-		}
-	}
-}
-
-func ShowEditCredsGUI() {
-	log.Println("ShowEditCredsGUI")
-	guiDo(GUIAskForCredentials)
-}
-
-// func updateWindow() {
-// 	err := mainWindow.SetChild(renderCredsWindow())
-// 	if err != nil {
-// 		log.Println("Error:", err)
-// 	}
-// }
-
-func ShareClipFlow() {
-	// ShareClipFlow gets current clipboard value, encrypts it
-	// uploads it to server and shows notification
-	log.Println("ShareClipFlow")
-	clip := GetClipboard()
-	clip_encrypted := Encrypt(clip)
-	if err := APIShareClip(clip_encrypted); err != nil {
-		ShowNotification("Clipster - Error", err.Error())
-		log.Println("Error:", err)
-		return
-	}
-	ShowNotification("Clipster – Shared clip", clip)
-}
-
-func DownloadLastClipFlow() {
-	// DownloadLastClipFlow downloads all clips as json from API
-	// unencrypts the latest encrypted text
-	// copies content to clipboard and shows notification
-	log.Println("DownloadLastClipFlow")
-	clips_ecrypted, err := APIDownloadAllClips()
-	if err != nil {
-		ShowNotification("Clipster - Error", err.Error())
-		log.Println("Error:", err)
-		return
-	}
-	log.Printf("Clips: %+v", clips_ecrypted)
-	clip_decrypted := Decrypt(clips_ecrypted[len(clips_ecrypted)-1].Text)
-	SetClipboard(clip_decrypted)
-	ShowNotification("Clipster – Got new clip", clip_decrypted)
-}
-
-func DownloadAllClipsFlow() {
-	// DownloadAllClipsFlow downloads all clips as json from API
-	// unencrypts the encrypted texts
-	// display result in gui
-	clips_ecrypted, err := APIDownloadAllClips()
-	if err != nil {
-		ShowNotification("Clipster - Error", err.Error())
-		log.Println("Error:", err)
-		return
-	}
-	log.Printf("Clips: %+v", clips_ecrypted)
-
-	clips_decrypted := make([]string, len(clips_ecrypted))
-	for i := range clips_ecrypted {
-		clips_decrypted[i] = Decrypt(clips_ecrypted[i].Text)
-	}
-
-	f := func() error { return GUIShowClips(clips_decrypted) }
-	guiDo(f)
-}
-
-func register_flow(host string, user string, pw string, ssl_disable bool) {
-	// register_flow check for completeness of creds
-	// creates hash from them
-	// uses hash to register at API endpoint
-	// displays Message box with the result
-	// on success saves credentials to config
-	host, user, pw, err := AreCredsComplete(host, user, pw)
-	if err != nil {
-		mainWindow.Message(err.Error()).WithError().Show()
-		log.Println("Error:", err)
-		return
-	}
-	// TODO: Remove all cleartext pws from logs?
-	log.Println("Registration:", host, user, pw, ssl_disable)
-
-	hash_login := GetLoginHashFromPw(user, pw)
-	// TODO: This is blocking. Goroutine?
-	if err := APIRegister(host, user, hash_login, ssl_disable); err != nil {
-		log.Println("Error:", err)
-		mainWindow.Message(err.Error()).WithError().Show()
-		return
-	}
-	hash_msg := GetMsgHashFromPw(user, pw)
-	conf = Config{host, user, hash_login, hash_msg, ssl_disable}
-	WriteConfigFile(conf)
-	log.Println("Ok: Registration flow completed")
-	mainWindow.Message("Registration successfull\nCredentials saved to config:\n" +
-		CONFIG_FILEPATH).WithInfo().Show()
-	mainWindow.Close()
-}
-
-func login_flow(host string, user string, pw string, ssl_disable bool) {
-	// login_flow check for completeness of creds
-	// creates hash from them
-	// uses hash to authemtocate against API endpoint
-	// displays Message box with the result
-	// on success saves credentials to config
-	host, user, pw, err := AreCredsComplete(host, user, pw)
-	if err != nil {
-		mainWindow.Message(err.Error()).WithError().Show()
-		log.Println("Error:", err)
-		return
-	}
-	// TODO: Remove all cleartext pws from logs?
-	log.Println("Login:", host, user, pw, ssl_disable)
-
-	hash_login := GetLoginHashFromPw(user, pw)
-	// TODO: This is blocking. Goroutine?
-	if err := APILogin(host, user, hash_login, ssl_disable); err != nil {
-		log.Println("Error:", err)
-		mainWindow.Message(err.Error()).WithError().Show()
-		return
-	}
-	hash_msg := GetMsgHashFromPw(user, pw)
-	conf = Config{host, user, hash_login, hash_msg, ssl_disable}
-	WriteConfigFile(conf)
-	log.Println("Ok: login workflow completed")
-	mainWindow.Message("Login successfull\nCredentials saved to config:\n" +
-		CONFIG_FILEPATH).WithInfo().Show()
-	mainWindow.Close()
-}
-
-func renderCredsWindow() base.Widget {
-	// renderCredsWindow renders the Window for editing Credentials
-	var user, pw, host string
-	var ssl_disable bool
-	widget :=
-		[]base.Widget{
-			&goey.Label{Text: "Server address:"},
-			&goey.TextInput{Value: host, Placeholder: HOST_DEFAULT,
-				OnChange: func(v string) {
-					host = v
-					log.Println("server input ", v)
-				}},
-			&goey.Checkbox{Text: "Disable SSL cert check", Value: false,
-				OnChange: func(val_check bool) {
-					ssl_disable = val_check
-					log.Println("SSL checkbox: ", ssl_disable)
-				}},
-			&goey.Label{Text: "Username:"},
-			&goey.TextInput{Value: user, Placeholder: "Enter username",
-				OnChange: func(v string) {
-					user = v
-					log.Println("username input ", v)
-				}},
-			&goey.Label{Text: "Password:"},
-			&goey.TextInput{Value: pw, Placeholder: "Enter password", Password: true,
-				OnChange: func(v string) {
-					pw = v
-					log.Println("password input ", v)
-				}},
-		}
-
-	widget = append(widget, &goey.HBox{
-		Children: []base.Widget{
-			&goey.Button{Text: "Login", OnClick: func() {
-				login_flow(host, user, pw, ssl_disable)
-			}},
-			&goey.Button{Text: "Register", OnClick: func() {
-				register_flow(host, user, pw, ssl_disable)
-			}},
-			&goey.Button{Text: "Cancel", OnClick: func() { mainWindow.Close() }}},
-		AlignMain: goey.MainCenter,
+	w.SetTitle("Clipster - Config")
+	w.Connect("destroy", func() {
+		w.Close()
 	})
+	w.SetIcon(ICON_PNG_PIXBUF)
+	w.ShowAll()
+}
 
-	return &goey.Padding{
-		Insets: goey.DefaultInsets(),
-		Child:  &goey.VBox{Children: widget},
+// GUI_FileChooserDialog displays the dialog for saving a file to disk
+// and returns chosen filepath
+func GUI_FileChooserDialog() string {
+
+	var filename string
+	title := "Clipster - Chose save location"
+	dialog, err := gtk.FileChooserDialogNewWith2Buttons(title, nil, gtk.FILE_CHOOSER_ACTION_SAVE,
+		"gtk-cancel", gtk.RESPONSE_CANCEL,
+		"gtk-save", gtk.RESPONSE_ACCEPT)
+	errorCheck(err)
+
+	dialog.SetIcon(ICON_PNG_PIXBUF)
+	dialog.SetDoOverwriteConfirmation(true)
+	dialog.SetCurrentName(DEFAULT_IMAGE_SAVE_NAME)
+	response := dialog.Run()
+
+	if response == gtk.RESPONSE_ACCEPT {
+		chooser := dialog.FileChooser
+		filename = chooser.GetFilename()
+		log.Println("Filename", filename)
+	}
+	dialog.Destroy()
+	return filename
+}
+
+// GUI_AllClips displays the window containing all retrieved clips
+func GUI_AllClips(clips []Clips) {
+	builder, err := gtk.BuilderNewFromString(GLADE_LAYOUT)
+	errorCheck(err)
+
+	obj, err := builder.GetObject("win_clips")
+	errorCheck(err)
+	w, err := isWindow(obj)
+	errorCheck(err)
+
+	obj, err = builder.GetObject("list_clips")
+	errorCheck(err)
+	box, err := isListBox(obj)
+	errorCheck(err)
+
+	// Add clips to GUI Rows
+	for _, clip := range clips {
+		row, _ := gtk.ListBoxRowNew()
+		row.SetSizeRequest(-1, 100)
+		// Create rows with content
+		if clip.Format == "img" {
+			log.Println("Got image clip")
+			clip := processClipTextToImages(clip)
+			row.Add(clip.GtkThumb)
+		} else {
+			log.Println("Got text clip")
+			txt, _ := gtk.TextViewNew()
+			txt.SetEditable(false)
+			txt.SetWrapMode(gtk.WRAP_WORD_CHAR)
+			buffer, _ := txt.GetBuffer()
+			buffer.SetText(clip.TextDecrypted)
+			row.Add(txt)
+		}
+		box.Add(row)
+	}
+
+	// Map the handlers to callback functions, and connect the signals to the Builder
+	signals := map[string]interface{}{
+		"list_clips_row_selected_cb": func(obj *gtk.ListBox) { sel_list_row = obj.GetSelectedRow().GetIndex() },
+		"btn_copy_clicked_cb":        func(obj *gtk.Button) { SetClipboard(clips[sel_list_row]) },
+		"btn_save_clicked_cb":        func(obj *gtk.Button) { ImageToDisk(clips[sel_list_row]) },
+		"btn_cancel_clicked_cb":      func() { w.Close() },
+	}
+	builder.ConnectSignals(signals)
+
+	w.SetIcon(ICON_PNG_PIXBUF)
+	w.SetTitle("Clipster - Your Clips")
+	w.Connect("destroy", func() {
+		w.Close()
+	})
+	w.ShowAll()
+}
+
+func createWindow(title string) *gtk.Window {
+	w, err := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
+	if err != nil {
+		log.Fatalln("Unable to create window:", err)
+		return nil
+	}
+	w.SetTitle(title)
+	w.Connect("destroy", func() {
+		w.Close()
+	})
+	return w
+}
+
+// GUI_DialogError displays an error message dialog
+func GUI_DialogError(body string) {
+	w := createWindow("Clipster - Error")
+	msg := gtk.MessageDialogNew(w, gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
+		gtk.BUTTONS_CLOSE, body)
+	msg.Connect("response", func() { msg.Destroy() })
+	msg.Run()
+}
+
+// GUI_DialogInfo displays an info message dialog
+func GUI_DialogInfo(body string) {
+	w := createWindow("Clipster - Info")
+	msg := gtk.MessageDialogNew(w, gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_INFO,
+		gtk.BUTTONS_OK, body)
+	msg.Connect("response", func() { msg.Destroy() })
+	msg.Run()
+}
+
+func onServerChange(txt *gtk.Entry) {
+	var err error
+	server, err = txt.GetText()
+	if err != nil {
+		log.Println("onServerChange", err)
 	}
 }
 
-func renderShowClipsWindows(clips []string) base.Widget {
-	// renderShowClipsWindows renders goey Window showing downloaded Clips
-	// allows user to copy text using shortcut or by clicking into text field
-	// and using the button
-	var id_selected int
-	widgets := []base.Widget{
-		&goey.Label{Text: "Your shared Clips:"},
+func onSSLToggle(check *gtk.CheckButton) {
+	ssl_disable = check.GetActive()
+}
+
+func onUsernameChange(txt *gtk.Entry) {
+	var err error
+	username, err = txt.GetText()
+	if err != nil {
+		log.Println("onUsernameChange", err)
 	}
+}
 
-	for i, v := range clips {
-		j := i
-		widgets = append(widgets, &goey.TextArea{Value: v,
-			ReadOnly: true,
-			MinLines: 3,
-			OnFocus: func() {
-				id_selected = j
-			}})
+func onPasswordChange(txt *gtk.Entry) {
+	var err error
+	password, err = txt.GetText()
+	if err != nil {
+		log.Println("onPasswordChange", err)
 	}
+}
 
-	widgets = append(widgets, &goey.HBox{
-		Children: []base.Widget{
-			&goey.Button{Text: "Copy to Clipboard", OnClick: func() {
-				fmt.Println("Copy to Clipboard")
-				SetClipboard(clips[id_selected])
-				ShowNotification("Clipster - Copied to clipboard", clips[id_selected])
-				mainWindow.Close()
-			}},
-			&goey.Button{Text: "Cancel", OnClick: func() { mainWindow.Close() }}},
-		AlignMain: goey.MainStart,
-	})
+func onLoginBtn(w *gtk.Window) {
+	if err := login_flow(server, username, password, ssl_disable); err != nil {
+		return
+	} else {
+		w.Close()
+	}
+}
 
-	return &goey.Padding{
-		Insets: goey.DefaultInsets(),
-		Child:  &goey.VBox{Children: widgets},
+func onRegisterBtn(w *gtk.Window) {
+	if err := register_flow(server, username, password, ssl_disable); err != nil {
+		return
+	} else {
+		w.Close()
+	}
+}
+
+func isWindow(obj glib.IObject) (*gtk.Window, error) {
+	if win, ok := obj.(*gtk.Window); ok {
+		return win, nil
+	}
+	return nil, errors.New("not a *gtk.Window")
+}
+
+func isFileChooserDialog(obj glib.IObject) (*gtk.FileChooserDialog, error) {
+	if dialog, ok := obj.(*gtk.FileChooserDialog); ok {
+		return dialog, nil
+	}
+	return nil, errors.New("not a *gtk.FileChooserDialog")
+}
+
+func isButton(obj glib.IObject) (*gtk.Button, error) {
+	if btn, ok := obj.(*gtk.Button); ok {
+		return btn, nil
+	}
+	return nil, errors.New("not a *gtk.Button")
+}
+
+func isListBox(obj glib.IObject) (*gtk.ListBox, error) {
+	// Make type assertion (as per gtk.go).
+	if box, ok := obj.(*gtk.ListBox); ok {
+		return box, nil
+	}
+	return nil, errors.New("not a *gtk.ListBox")
+}
+
+func errorCheck(e error) {
+	if e != nil {
+		log.Panic("Gotk3 error:", e)
 	}
 }
