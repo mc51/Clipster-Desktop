@@ -51,11 +51,11 @@ jobs:
       with:
         msystem: MINGW64
         path-type: inherit
-      install: >-
-        mingw-w64-x86_64-gtk3
-        mingw-w64-x86_64-toolchain
-        base-devel
-        glib2-devel
+        install: >-
+          mingw-w64-x86_64-gtk3
+          mingw-w64-x86_64-toolchain
+          base-devel
+          glib2-devel
       if: runner.os == 'Windows'
     # - name: switch git-bash shell to msys2 shell by adding msys2 path to PATH front
     #   run: |
