@@ -1,0 +1,53 @@
+name: Build
+
+on:
+  push:
+    tags:
+      - 'test_*' # Push events to matching v*, i.e. v1.0, v20.15.10
+
+jobs:
+
+  build:
+    name: Build packages
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        go-version: [1.17.x]
+        os: [windows-2019]
+        include:
+          - os: windows-2019
+            TARGET: windows
+            SHELL: msys2 {0}
+            CMD_BUILD: | #
+              mkdir -p build/bin/ build/share/glib-2.0/ build/lib/
+              sed -i -e 's/-Wl,-luuid/-luuid/g' /mingw64/lib/pkgconfig/gdk-3.0.pc
+              go mod tidy -compat="1.17"
+              go build -v -x -o build/bin/clipster_win.exe -ldflags "-H=windowsgui" .  # -s -w
+              cp /mingw64/bin/*.dll build/bin/
+              cp -a /mingw64/share/icons/ build/share/
+              cp -a /mingw64/share/glib-2.0/schemas/  build/share/schemas/glib-2.0/
+              cp -a /mingw64/lib/gdk-pixbuf-2.0/ build/lib/
+              cd build/ && powershell Compress-Archive * clipster_win.zip
+            OUT_FILE_NAME: clipster_win.zip
+            ASSET_MIME: application/zip  # application/vnd.microsoft.portable-executable
+    steps:
+    - name: Install Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: ${{ matrix.go-version }}
+    - name: Checkout repo
+      uses: actions/checkout@v2
+    - name: Install and use MINGW64
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW64
+        path-type: inherit
+        install: >-
+          mingw-w64-x86_64-gtk3
+          mingw-w64-x86_64-gcc
+          base-devel
+      if: runner.os == 'Windows'
+    - name: Build Go for ${{ matrix.TARGET }}
+      run: ${{ matrix.CMD_BUILD }}
+      shell: msys2 {0}
+      if: runner.os == 'Windows'
