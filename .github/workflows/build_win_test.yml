@@ -45,6 +45,8 @@ jobs:
         install: >-
           mingw-w64-x86_64-gtk3
           mingw-w64-x86_64-gcc
+          mingw-w64-x86_64-glib2
+          glib2-devel
           base-devel
       if: runner.os == 'Windows'
     - name: Build Go for ${{ matrix.TARGET }}
