@@ -25,7 +25,7 @@ jobs:
               go build -v -x -o build/bin/clipster_win.exe -ldflags "-H=windowsgui" .  # -s -w
               cp /mingw64/bin/*.dll build/bin/
               cp -a /mingw64/share/icons/ build/share/
-              cp -a /mingw64/share/glib-2.0/schemas/  build/share/schemas/glib-2.0/
+              cp -a /mingw64/share/glib-2.0/schemas/  build/share/glib-2.0/
               cp -a /mingw64/lib/gdk-pixbuf-2.0/ build/lib/
               cd build/ && powershell Compress-Archive * clipster_win.zip
             OUT_FILE_NAME: clipster_win.zip
