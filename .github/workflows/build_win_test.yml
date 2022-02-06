@@ -18,7 +18,7 @@ jobs:
           - os: windows-2019
             TARGET: windows
             SHELL: msys2 {0}
-            CMD_BUILD: | #
+            CMD_BUILD: |
               mkdir -p build/bin/ build/share/glib-2.0/ build/lib/
               sed -i -e 's/-Wl,-luuid/-luuid/g' /mingw64/lib/pkgconfig/gdk-3.0.pc
               go mod tidy -compat="1.17"
@@ -43,9 +43,9 @@ jobs:
         msystem: MINGW64
         path-type: inherit
         install: >-
+          mingw-w64-x86_64-pkg-config
           mingw-w64-x86_64-gtk3
           mingw-w64-x86_64-gcc
-          mingw-w64-x86_64-glib2
           glib2-devel
           base-devel
       if: runner.os == 'Windows'
