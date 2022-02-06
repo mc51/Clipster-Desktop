@@ -22,12 +22,12 @@ jobs:
               mkdir -p build/bin/ build/share/glib-2.0/ build/lib/
               sed -i -e 's/-Wl,-luuid/-luuid/g' /mingw64/lib/pkgconfig/gdk-3.0.pc
               go mod tidy -compat="1.17"
-              go build -v -x -o build/bin/clipster_win.exe -ldflags "-H=windowsgui" .  # -s -w
+              go build -v -x -o build/bin/clipster_win.exe -ldflags "-H=windowsgui -s -w" .
               cp /mingw64/bin/*.dll build/bin/
               cp -a /mingw64/share/icons/ build/share/
               cp -a /mingw64/share/glib-2.0/schemas/  build/share/glib-2.0/
               cp -a /mingw64/lib/gdk-pixbuf-2.0/ build/lib/
-              cd build/ && powershell Compress-Archive * clipster_win.zip
+              cd build && zip -r9 clipster_win *
             OUT_FILE_NAME: clipster_win.zip
             ASSET_MIME: application/zip  # application/vnd.microsoft.portable-executable
     steps:
@@ -48,6 +48,7 @@ jobs:
           mingw-w64-x86_64-gcc
           glib2-devel
           base-devel
+          zip
       if: runner.os == 'Windows'
     - name: Build Go for ${{ matrix.TARGET }}
       run: ${{ matrix.CMD_BUILD }}
