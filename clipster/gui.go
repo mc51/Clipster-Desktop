@@ -19,6 +19,7 @@ var (
 	ssl_disable  bool
 )
 
+// ShowNotification shows a desktop notification for all platforms
 func ShowNotification(title string, body string) {
 	// TODO: Icon in MacOS is default -> I guess it display bundle icon when there is one
 	if len(body) >= MAX_NOTIFICATION_LENGTH {
@@ -145,6 +146,7 @@ func createWindow(title string) *gtk.Window {
 		return nil
 	}
 	w.SetTitle(title)
+	w.SetIcon(ICON_PNG_PIXBUF)
 	w.Connect("destroy", func() {
 		w.Close()
 	})
