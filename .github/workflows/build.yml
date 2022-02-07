@@ -77,7 +77,7 @@ jobs:
               go build -o build/bin/clipster_win.exe -ldflags "-H=windowsgui -s -w" .
               mv /mingw64/bin/*.dll build/bin/
               mv /mingw64/share/icons/hicolor/ build/share/icons/
-              mv /mingw64/share/icons/Adwaita/* build/share/icons/Adwaita/
+              cp /mingw64/share/icons/Adwaita/* build/share/icons/Adwaita/ || :
               mv /mingw64/share/icons/Adwaita/16x16/ build/share/icons/Adwaita/
               mv /mingw64/share/glib-2.0/schemas/  build/share/glib-2.0/
               mv /mingw64/lib/gdk-pixbuf-2.0/ build/lib/
