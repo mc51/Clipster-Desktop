@@ -75,12 +75,12 @@ jobs:
               sed -i -e 's/-Wl,-luuid/-luuid/g' /mingw64/lib/pkgconfig/gdk-3.0.pc
               go mod tidy -compat="1.17"
               go build -o build/bin/clipster_win.exe -ldflags "-H=windowsgui -s -w" .
-              cp /mingw64/bin/*.dll build/bin/
-              cp -a /mingw64/share/icons/hicolor/ build/share/icons/
-              cp /mingw64/share/icons/Adwaita/* build/share/icons/Adwaita/
-              cp -a /mingw64/share/icons/Adwaita/16x16/ build/share/icons/Adwaita/
-              cp -a /mingw64/share/glib-2.0/schemas/  build/share/glib-2.0/
-              cp -a /mingw64/lib/gdk-pixbuf-2.0/ build/lib/
+              mv /mingw64/bin/*.dll build/bin/
+              mv /mingw64/share/icons/hicolor/ build/share/icons/
+              mv /mingw64/share/icons/Adwaita/* build/share/icons/Adwaita/
+              mv /mingw64/share/icons/Adwaita/16x16/ build/share/icons/Adwaita/
+              mv /mingw64/share/glib-2.0/schemas/  build/share/glib-2.0/
+              mv /mingw64/lib/gdk-pixbuf-2.0/ build/lib/
               cd build && mv * clipster/
               zip -r9 clipster_win clipster/
             OUT_FILE_NAME: clipster_win.zip
