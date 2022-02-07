@@ -70,6 +70,7 @@ jobs:
             TARGET: windows
             SHELL: msys2 {0}
             CMD_BUILD: |
+              go get github.com/akavel/rsrc && rsrc -ico assets/clipster_icon_64.ico
               mkdir -p build/clipster build/bin/ build/lib/
               mkdir -p build/share/glib-2.0/ build/share/icons/Adwaita/
               sed -i -e 's/-Wl,-luuid/-luuid/g' /mingw64/lib/pkgconfig/gdk-3.0.pc
