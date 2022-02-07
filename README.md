@@ -30,7 +30,7 @@ CentOS/RHEL:
 
 ### Windows  
 
-Download [`clipster_win.zip`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster_win.zip) from the latest release and extract it. Run `clipster_win.exe` in the `bin/` folder.  
+Download [`clipster_win.zip`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster_win.zip) from the latest release and extract it. Run `clipster_win.exe` in the `clipster/bin/` folder.  
 To have Clipster auto start, right click on the systray menu and select `Autostart Clipster`.  
 The `.zip` file comes with GTK-3 files that the GUI depends on. Keep the folder structure under `clipster/` so that the files can be found.  
 
