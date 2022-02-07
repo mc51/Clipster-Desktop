@@ -81,7 +81,7 @@ jobs:
               mv /mingw64/share/icons/Adwaita/16x16/ build/share/icons/Adwaita/
               mv /mingw64/share/glib-2.0/schemas/  build/share/glib-2.0/
               mv /mingw64/lib/gdk-pixbuf-2.0/ build/lib/
-              cd build && mv * clipster/
+              cd build && mv * clipster/ || :
               zip -r9 clipster_win clipster/
             OUT_FILE_NAME: clipster_win.zip
             ASSET_MIME: application/zip
