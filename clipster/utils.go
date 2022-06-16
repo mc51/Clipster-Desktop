@@ -27,32 +27,39 @@ func BytesToPixbuf(img []byte) *gdk.Pixbuf {
 	return i
 }
 
-// BytesToImage reads bytes and returns image.Image
+// BytesToImage reads bytes and returns image.Image. If bytes are not a valid Image
+// return a default "file not found" Image
 func BytesToImage(img []byte) (image.Image, error) {
-	m, _, err := image.Decode(bytes.NewReader(img))
+	img_decoded, _, err := image.Decode(bytes.NewReader(img))
 	if err != nil {
-		log.Panicln("Error:", err)
+		log.Println("Error BytesToImage:", err)
+		log.Println("Returning 'missing file' image instead")
+		img_decoded, _, err = image.Decode(bytes.NewReader(PNG_BYTES_IMAGE_NOTFOUND))
 	}
-	return m, err
+	return img_decoded, err
 }
 
 // ImageToBytes reads image and returns bytes
 func ImageToBytes(img image.Image) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	err := png.Encode(buf, img)
+	if err != nil {
+		log.Println("Error Encode:", err)
+	}
 	img_bytes := buf.Bytes()
 	return img_bytes, err
 }
 
-// B64ToImage converts b64 encoded string of an image to image.Image
+// B64ToImage converts b64 encoded string of an image to image.Image if it fails
+// nil is returned
 func B64ToImage(img string) (image.Image, error) {
 	img_bytes, err := base64.StdEncoding.DecodeString(img)
 	if err != nil {
-		log.Panicln("Error:", err)
+		log.Println("Error DecodeString:", err)
 	}
 	image, err := BytesToImage(img_bytes)
 	if err != nil {
-		log.Panicln("Error:", err)
+		log.Println("Error BytesToImage:", err)
 	}
 	return image, err
 }
@@ -62,7 +69,7 @@ func AreCredsComplete(host string, user string, pw string) (string, string, stri
 	var err error = nil
 	host = strings.TrimSpace(host)
 	user = strings.TrimSpace(user)
-	pw = strings.TrimSpace(pw)
+	pw = strings.TrimSpace(pw) // maybe space should be valid? but not at beginning or end?
 
 	if host == "" {
 		host = HOST_DEFAULT
@@ -208,7 +215,7 @@ func processClipTextToImages(clip Clips) Clips {
 	clip.GtkThumb, err = gtk.ImageNewFromPixbuf(img_thumb_pixbuf)
 
 	if err != nil {
-		log.Println(err)
+		log.Println("Error processClipTextToImages:", err)
 	}
 
 	return clip
