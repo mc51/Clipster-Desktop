@@ -15,6 +15,7 @@ require (
 )
 
 require (
+	github.com/biessek/golang-ico v0.0.0-20180326222316-d348d9ea4670 // indirect
 	github.com/cratonica/2goarray v0.0.0-20190331194516-514510793eaa // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/getlantern/context v0.0.0-20190109183933-c447772a6520 // indirect
@@ -29,6 +30,7 @@ require (
 	github.com/gopherjs/gopherjs v0.0.0-20180825215210-0210a2f0f73c // indirect
 	github.com/gopherjs/gopherwasm v1.1.0 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
+	github.com/jsummers/gobmp v0.0.0-20151104160322-e2ba15ffa76e // indirect
 	github.com/magiconair/properties v1.8.5 // indirect
 	github.com/mitchellh/mapstructure v1.4.3 // indirect
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect

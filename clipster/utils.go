@@ -6,11 +6,17 @@ import (
 	"encoding/base64"
 	"errors"
 	"image"
+	_ "image/gif"
+	_ "image/jpeg"
 	"image/png"
 	"io/ioutil"
 	"log"
+	"net/http"
 	"regexp"
 	"strings"
+
+	_ "github.com/biessek/golang-ico"
+	_ "golang.org/x/image/bmp"
 
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/glib"
@@ -30,10 +36,15 @@ func BytesToPixbuf(img []byte) *gdk.Pixbuf {
 // BytesToImage reads bytes and returns image.Image. If bytes are not a valid Image
 // return a default "file not found" Image
 func BytesToImage(img []byte) (image.Image, error) {
-	img_decoded, _, err := image.Decode(bytes.NewReader(img))
+
+	mimeType := http.DetectContentType(img)
+	log.Printf("BytesToImage mimeType: %s", mimeType)
+
+	img_decoded, format, err := image.Decode(bytes.NewReader(img))
+	log.Printf("BytesToImage Decode Format: %s", format)
 	if err != nil {
 		log.Println("Error BytesToImage:", err)
-		log.Println("Returning 'missing file' image instead")
+		log.Println("Returning 'missing file' image instead", format)
 		img_decoded, _, err = image.Decode(bytes.NewReader(PNG_BYTES_IMAGE_NOTFOUND))
 	}
 	return img_decoded, err
