@@ -4,11 +4,10 @@ package main
 import (
 	_ "embed"
 	"log"
-	"os"
+	"runtime"
 
 	"clipster/clipster"
 
-	"github.com/faiface/mainthread"
 	"github.com/getlantern/systray"
 	"github.com/gotk3/gotk3/gtk"
 )
@@ -16,28 +15,26 @@ import (
 //go:embed assets/clipster.glade
 var GLADE_LAYOUT string
 
+// GTK (and Cocoa on MacOS) must run on the main OS thread
+func init() {
+	runtime.LockOSThread()
+}
+
 func main() {
 	clipster.GLADE_LAYOUT = GLADE_LAYOUT
-	mainthread.Run(run) // enables mainthread package and runs run in a separate goroutine
-}
+	clipster.Init()
 
-// run GUI on main thread which is requirement for MacOS
-func run() {
-	mainthread.CallNonBlock(func() { initGTK() })
-	ok, err := clipster.OpenConfigFile()
-	if !ok {
-		log.Println("Error:", err)
-		clipster.DoGUI(clipster.GUI_ConfigWindow)
-	} else {
-		conf, _ := clipster.LoadConfigFromFile()
-		log.Printf("%+v", conf)
-	}
-}
-
-// initGTK registers systray and starts GTK loop
-func initGTK() {
 	gtk.Init(nil)
 	systray.Register(onReady, onExit)
+
+	if err := clipster.OpenConfigFile(); err != nil {
+		log.Println("Error:", err)
+		clipster.DoGUI(clipster.GUI_ConfigWindow)
+	} else if _, err := clipster.LoadConfigFromFile(); err != nil {
+		log.Println("Error:", err)
+		clipster.DoGUI(clipster.GUI_ConfigWindow)
+	}
+
 	gtk.Main()
 }
 
@@ -47,56 +44,49 @@ func onReady() {
 	systray.SetIcon(clipster.ICON_TRAY_BYTES)
 	systray.SetTitle("Clipster")
 	systray.SetTooltip("Clipster")
-	autostart_enabled := clipster.IsAutostartEnabled()
 
-	// We can manipulate the tray in other goroutines
-	go func() {
+	mLastClip := systray.AddMenuItem("Get last Clip", "Get last Clip")
+	mAllClips := systray.AddMenuItem("Get all Clips", "Get all Clips")
+	mShareClip := systray.AddMenuItem("Share Clip", "Share Clip")
+	systray.AddSeparator()
+	mEditCreds := systray.AddMenuItem("Edit Credentials", "Edit Credentials")
+	mAutostart := systray.AddMenuItemCheckbox("Autostart Clipster", "Autostart Clipster",
+		clipster.IsAutostartEnabled())
+	systray.AddSeparator()
+	mQuit := systray.AddMenuItem("Quit", "Quit the whole app")
 
-		mLastClip := systray.AddMenuItem("Get last Clip", "Get last Clip")
-		mAllClips := systray.AddMenuItem("Get all Clips", "Get all Clips")
-		mShareClip := systray.AddMenuItem("Share Clip", "Share Clip")
-		systray.AddSeparator()
-		mEditCreds := systray.AddMenuItem("Edit Credentials", "Edit Credentials")
-		mAutostart := systray.AddMenuItemCheckbox("Autostart Clipster", "Autostart Clipster",
-			autostart_enabled)
-		systray.AddSeparator()
-		mQuit := systray.AddMenuItem("Quit", "Quit the whole app")
-
-		// Read from Channel: Called as callback from C
-		for {
-			select {
-			case <-mLastClip.ClickedCh:
-				log.Println("Get last Clip")
-				clipster.DownloadClipsFlow(true)
-			case <-mAllClips.ClickedCh:
-				log.Println("Get all Clips")
-				clipster.DownloadClipsFlow(false)
-			case <-mShareClip.ClickedCh:
-				log.Println("Share Clip")
-				clipster.ShareClipFlow()
-			case <-mEditCreds.ClickedCh:
-				log.Println("Edit Creds")
-				clipster.DoGUI(clipster.GUI_ConfigWindow)
-			case <-mAutostart.ClickedCh:
-				log.Println("Autostart")
-				// TODO: FIXME this doesnt work on windows - checkmark status changed only
-				// after restart
-				autostart_enabled = !autostart_enabled
-				clipster.ToggleAutostart()
-			case <-mQuit.ClickedCh:
-				log.Println("Quit")
-				onExit()
-				return
+	// onReady already runs in its own goroutine, so we can block here
+	for {
+		select {
+		case <-mLastClip.ClickedCh:
+			log.Println("Get last Clip")
+			clipster.DownloadClipsFlow(true)
+		case <-mAllClips.ClickedCh:
+			log.Println("Get all Clips")
+			clipster.DownloadClipsFlow(false)
+		case <-mShareClip.ClickedCh:
+			log.Println("Share Clip")
+			clipster.ShareClipFlow()
+		case <-mEditCreds.ClickedCh:
+			log.Println("Edit Creds")
+			clipster.DoGUI(clipster.GUI_ConfigWindow)
+		case <-mAutostart.ClickedCh:
+			log.Println("Autostart")
+			clipster.ToggleAutostart()
+			if clipster.IsAutostartEnabled() {
+				mAutostart.Check()
+			} else {
+				mAutostart.Uncheck()
 			}
+		case <-mQuit.ClickedCh:
+			log.Println("Quit")
+			systray.Quit()
+			return
 		}
-	}()
+	}
 }
 
-// onExit is called on systray menu quit
+// onExit is called by systray when it shuts down
 func onExit() {
-	// Remove temp icon file
-	if err := os.Remove(clipster.ICON_FILENAME); err != nil {
-		log.Println("Error: deleting temp file", err)
-	}
-	systray.Quit()
+	log.Println("On Exit")
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 
+	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
 
@@ -12,21 +13,17 @@ import (
 )
 
 var (
-	sel_list_row int
-	server       string
-	username     string
-	password     string
-	ssl_disable  bool
+	server      string
+	username    string
+	password    string
+	ssl_disable bool
 )
 
 // ShowNotification shows a desktop notification for all platforms
 func ShowNotification(title string, body string) {
 	// TODO: Icon in MacOS is default -> I guess it display bundle icon when there is one
-	if len(body) >= MAX_NOTIFICATION_LENGTH {
-		body = body[0:MAX_NOTIFICATION_LENGTH] + " [...]"
-	}
-	err := beeep.Notify(title, body, ICON_FILENAME)
-	if err != nil {
+	body = truncate(body, MAX_NOTIFICATION_LENGTH)
+	if err := beeep.Notify(title, body, ICON_PNG_BYTES); err != nil {
 		log.Println(err)
 	}
 }
@@ -53,10 +50,25 @@ func GUI_ConfigWindow() {
 	}
 	builder.ConnectSignals(signals)
 
+	// Pre-fill form with current config. Setting values triggers the signal handlers above
+	server, username, password, ssl_disable = "", "", "", false
+	if obj, err := builder.GetObject("form_server_address"); err == nil {
+		if entry, ok := obj.(*gtk.Entry); ok && conf.Server != HOST_DEFAULT {
+			entry.SetText(conf.Server)
+		}
+	}
+	if obj, err := builder.GetObject("form_username"); err == nil {
+		if entry, ok := obj.(*gtk.Entry); ok {
+			entry.SetText(conf.Username)
+		}
+	}
+	if obj, err := builder.GetObject("form_disable_ssl"); err == nil {
+		if check, ok := obj.(*gtk.CheckButton); ok {
+			check.SetActive(conf.Disable_ssl_cert_check)
+		}
+	}
+
 	w.SetTitle("Clipster - Config")
-	w.Connect("destroy", func() {
-		w.Close()
-	})
 	w.SetIcon(ICON_PNG_PIXBUF)
 	w.ShowAll()
 }
@@ -64,12 +76,11 @@ func GUI_ConfigWindow() {
 // GUI_FileChooserDialog displays the dialog for saving a file to disk
 // and returns chosen filepath
 func GUI_FileChooserDialog() string {
-
 	var filename string
 	title := "Clipster - Chose save location"
 	dialog, err := gtk.FileChooserDialogNewWith2Buttons(title, nil, gtk.FILE_CHOOSER_ACTION_SAVE,
-		"gtk-cancel", gtk.RESPONSE_CANCEL,
-		"gtk-save", gtk.RESPONSE_ACCEPT)
+		"_Cancel", gtk.RESPONSE_CANCEL,
+		"_Save", gtk.RESPONSE_ACCEPT)
 	errorCheck(err)
 
 	dialog.SetIcon(ICON_PNG_PIXBUF)
@@ -78,8 +89,7 @@ func GUI_FileChooserDialog() string {
 	response := dialog.Run()
 
 	if response == gtk.RESPONSE_ACCEPT {
-		chooser := dialog.FileChooser
-		filename = chooser.GetFilename()
+		filename = dialog.GetFilename()
 		log.Println("Filename", filename)
 	}
 	dialog.Destroy()
@@ -107,11 +117,13 @@ func GUI_AllClips(clips []Clips) {
 		row.SetSizeRequest(-1, 100)
 		// Create rows with content
 		if clip.Format == "img" {
-			log.Println("Got image clip")
-			clip := processClipTextToImages(clip)
-			row.Add(clip.GtkThumb)
+			img, err := thumbnailToGtkImage(clip.ThumbBytes)
+			if err != nil {
+				log.Println("Error: creating thumbnail", err)
+				continue
+			}
+			row.Add(img)
 		} else {
-			log.Println("Got text clip")
 			txt, _ := gtk.TextViewNew()
 			txt.SetEditable(false)
 			txt.SetWrapMode(gtk.WRAP_WORD_CHAR)
@@ -122,53 +134,75 @@ func GUI_AllClips(clips []Clips) {
 		box.Add(row)
 	}
 
+	// returns the clip of the currently selected row, or false if none is selected
+	selectedClip := func() (Clips, bool) {
+		row := box.GetSelectedRow()
+		if row == nil || row.GetIndex() < 0 || row.GetIndex() >= len(clips) {
+			GUI_DialogError("Please select a clip first")
+			return Clips{}, false
+		}
+		return clips[row.GetIndex()], true
+	}
+
 	// Map the handlers to callback functions, and connect the signals to the Builder
 	signals := map[string]interface{}{
-		"list_clips_row_selected_cb": func(obj *gtk.ListBox) { sel_list_row = obj.GetSelectedRow().GetIndex() },
-		"btn_copy_clicked_cb":        func(obj *gtk.Button) { SetClipboard(clips[sel_list_row]) },
-		"btn_save_clicked_cb":        func(obj *gtk.Button) { ImageToDisk(clips[sel_list_row]) },
-		"btn_cancel_clicked_cb":      func() { w.Close() },
+		"btn_copy_clicked_cb": func() {
+			if clip, ok := selectedClip(); ok {
+				SetClipboard(clip)
+			}
+		},
+		"btn_save_clicked_cb": func() {
+			if clip, ok := selectedClip(); ok {
+				ImageToDisk(clip)
+			}
+		},
+		"btn_cancel_clicked_cb": func() { w.Close() },
 	}
 	builder.ConnectSignals(signals)
 
 	w.SetIcon(ICON_PNG_PIXBUF)
 	w.SetTitle("Clipster - Your Clips")
-	w.Connect("destroy", func() {
-		w.Close()
-	})
 	w.ShowAll()
 }
 
-func createWindow(title string) *gtk.Window {
+// thumbnailToGtkImage creates a gtk.Image from PNG bytes. Must run on the GTK main thread
+func thumbnailToGtkImage(thumb []byte) (*gtk.Image, error) {
+	if len(thumb) == 0 {
+		thumb = PNG_BYTES_IMAGE_NOTFOUND
+	}
+	pixbuf, err := gdk.PixbufNewFromBytesOnly(thumb)
+	if err != nil {
+		return nil, err
+	}
+	return gtk.ImageNewFromPixbuf(pixbuf)
+}
+
+// showMessageDialog displays a modal message dialog and blocks until it is closed
+func showMessageDialog(title string, mType gtk.MessageType, buttons gtk.ButtonsType, body string) {
+	// hidden parent window so GTK does not complain about a dialog without transient parent
 	w, err := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
 	if err != nil {
-		log.Fatalln("Unable to create window:", err)
-		return nil
+		log.Println("Unable to create window:", err)
+		return
 	}
+	defer w.Destroy()
 	w.SetTitle(title)
 	w.SetIcon(ICON_PNG_PIXBUF)
-	w.Connect("destroy", func() {
-		w.Close()
-	})
-	return w
+
+	msg := gtk.MessageDialogNew(w, gtk.DIALOG_DESTROY_WITH_PARENT, mType, buttons, "%s", body)
+	msg.SetTitle(title)
+	msg.Run()
+	msg.Destroy()
 }
 
 // GUI_DialogError displays an error message dialog
 func GUI_DialogError(body string) {
-	w := createWindow("Clipster - Error")
-	msg := gtk.MessageDialogNew(w, gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_ERROR,
-		gtk.BUTTONS_CLOSE, body)
-	msg.Connect("response", func() { msg.Destroy() })
-	msg.Run()
+	showMessageDialog("Clipster - Error", gtk.MESSAGE_ERROR, gtk.BUTTONS_CLOSE, body)
 }
 
 // GUI_DialogInfo displays an info message dialog
 func GUI_DialogInfo(body string) {
-	w := createWindow("Clipster - Info")
-	msg := gtk.MessageDialogNew(w, gtk.DIALOG_DESTROY_WITH_PARENT, gtk.MESSAGE_INFO,
-		gtk.BUTTONS_OK, body)
-	msg.Connect("response", func() { msg.Destroy() })
-	msg.Run()
+	showMessageDialog("Clipster - Info", gtk.MESSAGE_INFO, gtk.BUTTONS_OK, body)
 }
 
 func onServerChange(txt *gtk.Entry) {
@@ -200,17 +234,13 @@ func onPasswordChange(txt *gtk.Entry) {
 }
 
 func onLoginBtn(w *gtk.Window) {
-	if err := login_flow(server, username, password, ssl_disable); err != nil {
-		return
-	} else {
+	if err := login_flow(server, username, password, ssl_disable); err == nil {
 		w.Close()
 	}
 }
 
 func onRegisterBtn(w *gtk.Window) {
-	if err := register_flow(server, username, password, ssl_disable); err != nil {
-		return
-	} else {
+	if err := register_flow(server, username, password, ssl_disable); err == nil {
 		w.Close()
 	}
 }
@@ -222,22 +252,7 @@ func isWindow(obj glib.IObject) (*gtk.Window, error) {
 	return nil, errors.New("not a *gtk.Window")
 }
 
-func isFileChooserDialog(obj glib.IObject) (*gtk.FileChooserDialog, error) {
-	if dialog, ok := obj.(*gtk.FileChooserDialog); ok {
-		return dialog, nil
-	}
-	return nil, errors.New("not a *gtk.FileChooserDialog")
-}
-
-func isButton(obj glib.IObject) (*gtk.Button, error) {
-	if btn, ok := obj.(*gtk.Button); ok {
-		return btn, nil
-	}
-	return nil, errors.New("not a *gtk.Button")
-}
-
 func isListBox(obj glib.IObject) (*gtk.ListBox, error) {
-	// Make type assertion (as per gtk.go).
 	if box, ok := obj.(*gtk.ListBox); ok {
 		return box, nil
 	}

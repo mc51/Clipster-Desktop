@@ -9,20 +9,21 @@ import (
 	_ "image/gif"
 	_ "image/jpeg"
 	"image/png"
-	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 
 	_ "github.com/biessek/golang-ico"
 	_ "golang.org/x/image/bmp"
+	"golang.org/x/image/draw"
 
 	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/glib"
-	"github.com/gotk3/gotk3/gtk"
-	"github.com/nfnt/resize"
 )
+
+var reHostname = regexp.MustCompile(RE_HOSTNAME)
 
 // BytesToPixbuf takes Image in bytes and returns gdk.Pixbuf representation
 func BytesToPixbuf(img []byte) *gdk.Pixbuf {
@@ -36,7 +37,6 @@ func BytesToPixbuf(img []byte) *gdk.Pixbuf {
 // BytesToImage reads bytes and returns image.Image. If bytes are not a valid Image
 // return a default "file not found" Image
 func BytesToImage(img []byte) (image.Image, error) {
-
 	mimeType := http.DetectContentType(img)
 	log.Printf("BytesToImage mimeType: %s", mimeType)
 
@@ -44,7 +44,7 @@ func BytesToImage(img []byte) (image.Image, error) {
 	log.Printf("BytesToImage Decode Format: %s", format)
 	if err != nil {
 		log.Println("Error BytesToImage:", err)
-		log.Println("Returning 'missing file' image instead", format)
+		log.Println("Returning 'missing file' image instead")
 		img_decoded, _, err = image.Decode(bytes.NewReader(PNG_BYTES_IMAGE_NOTFOUND))
 	}
 	return img_decoded, err
@@ -53,32 +53,56 @@ func BytesToImage(img []byte) (image.Image, error) {
 // ImageToBytes reads image and returns bytes
 func ImageToBytes(img image.Image) ([]byte, error) {
 	buf := new(bytes.Buffer)
-	err := png.Encode(buf, img)
-	if err != nil {
+	if err := png.Encode(buf, img); err != nil {
 		log.Println("Error Encode:", err)
+		return nil, err
 	}
-	img_bytes := buf.Bytes()
-	return img_bytes, err
+	return buf.Bytes(), nil
 }
 
-// B64ToImage converts b64 encoded string of an image to image.Image if it fails
-// nil is returned
+// B64ToImage converts b64 encoded string of an image to image.Image. If the
+// string is no valid image, a "file not found" image is returned instead
 func B64ToImage(img string) (image.Image, error) {
 	img_bytes, err := base64.StdEncoding.DecodeString(img)
 	if err != nil {
 		log.Println("Error DecodeString:", err)
 	}
-	image, err := BytesToImage(img_bytes)
-	if err != nil {
-		log.Println("Error BytesToImage:", err)
+	return BytesToImage(img_bytes)
+}
+
+// Thumbnail scales img down to fit into maxWidth x maxHeight keeping the aspect ratio.
+// Images that already fit are returned unchanged
+func Thumbnail(maxWidth int, maxHeight int, img image.Image) image.Image {
+	b := img.Bounds()
+	w, h := b.Dx(), b.Dy()
+	if w <= maxWidth && h <= maxHeight {
+		return img
 	}
-	return image, err
+	if w*maxHeight > h*maxWidth {
+		h = max(1, h*maxWidth/w)
+		w = maxWidth
+	} else {
+		w = max(1, w*maxHeight/h)
+		h = maxHeight
+	}
+	dst := image.NewRGBA(image.Rect(0, 0, w, h))
+	draw.ApproxBiLinear.Scale(dst, dst.Bounds(), img, b, draw.Src, nil)
+	return dst
+}
+
+// truncate shortens s to at most n runes and marks it as shortened
+func truncate(s string, n int) string {
+	r := []rune(s)
+	if len(r) <= n {
+		return s
+	}
+	return string(r[:n]) + " [...]"
 }
 
 // AreCredsComplete checks if entered credentials are complete and hostname is valid
 func AreCredsComplete(host string, user string, pw string) (string, string, string, error) {
 	var err error = nil
-	host = strings.TrimSpace(host)
+	host = strings.TrimRight(strings.TrimSpace(host), "/")
 	user = strings.TrimSpace(user)
 	pw = strings.TrimSpace(pw) // maybe space should be valid? but not at beginning or end?
 
@@ -97,8 +121,7 @@ func AreCredsComplete(host string, user string, pw string) (string, string, stri
 
 // isHostnameValid checks hostname against some regex for basic validity
 func isHostnameValid(host string) bool {
-	match, _ := regexp.Match(RE_HOSTNAME, []byte(host))
-	return match
+	return reHostname.MatchString(host)
 }
 
 // DoGUI adds function to be run on GTK Main loop / main thread
@@ -121,8 +144,7 @@ func login_flow(host string, user string, pw string, ssl_disable bool) error {
 		log.Println("Error:", err)
 		return err
 	}
-	// TODO: Remove all cleartext pws from logs?
-	log.Println("Login:", host, user, pw, ssl_disable)
+	log.Println("Login:", host, user, ssl_disable)
 
 	hash_login := GetLoginHashFromPw(user, pw)
 	// TODO: This is blocking. Goroutine?
@@ -131,13 +153,8 @@ func login_flow(host string, user string, pw string, ssl_disable bool) error {
 		GUI_DialogError("Error: " + err.Error())
 		return err
 	}
-	hash_msg := GetMsgHashFromPw(user, pw)
-	conf = Config{host, user, hash_login, hash_msg, ssl_disable}
-	WriteConfigFile(conf)
-	log.Println("Ok: login workflow completed")
-	GUI_DialogInfo("Login successfull\nCredentials saved to config:\n" +
-		CONFIG_FILEPATH)
-	return nil
+	return saveCredentials(Config{host, user, hash_login, GetMsgHashFromPw(user, pw), ssl_disable},
+		"Login successful")
 }
 
 // register_flow check for completeness of creds, creates hash from them,
@@ -150,8 +167,7 @@ func register_flow(host string, user string, pw string, ssl_disable bool) error 
 		log.Println("Error:", err)
 		return err
 	}
-	// TODO: Remove all cleartext pws from logs?
-	log.Println("Registration:", host, user, pw, ssl_disable)
+	log.Println("Registration:", host, user, ssl_disable)
 
 	hash_login := GetLoginHashFromPw(user, pw)
 	// TODO: This is blocking. Goroutine?
@@ -160,13 +176,20 @@ func register_flow(host string, user string, pw string, ssl_disable bool) error 
 		GUI_DialogError("Error: " + err.Error())
 		return err
 	}
-	hash_msg := GetMsgHashFromPw(user, pw)
-	conf = Config{host, user, hash_login, hash_msg, ssl_disable}
-	WriteConfigFile(conf)
-	log.Println("Ok: Registration flow completed")
+	return saveCredentials(Config{host, user, hash_login, GetMsgHashFromPw(user, pw), ssl_disable},
+		"Registration successful")
+}
 
-	GUI_DialogInfo("Registration successfull\nCredentials saved to config:\n" +
-		CONFIG_FILEPATH)
+// saveCredentials makes c the active config, writes it to disk and displays the result
+func saveCredentials(c Config, msg string) error {
+	conf = c
+	if err := WriteConfigFile(conf); err != nil {
+		GUI_DialogError(msg + "\nBut credentials could not be saved to config:\n" +
+			CONFIG_FILEPATH + "\n" + err.Error())
+		return err
+	}
+	log.Println("Ok:", msg)
+	GUI_DialogInfo(msg + "\nCredentials saved to config:\n" + CONFIG_FILEPATH)
 	return nil
 }
 
@@ -179,17 +202,33 @@ func DownloadClipsFlow(last_only bool) {
 		log.Println("Error:", err)
 		return
 	}
-	log.Printf("Clips: %+v", clips)
+	if len(clips) == 0 {
+		ShowNotification("Clipster", "There are no shared clips yet")
+		return
+	}
+	if last_only {
+		clips = clips[len(clips)-1:]
+	}
 
 	for i := range clips {
-		clips[i].TextDecrypted = Decrypt(clips[i].Text)
+		clips[i].TextDecrypted, err = Decrypt(clips[i].Text)
+		if err != nil {
+			log.Println("Error:", err)
+			if last_only {
+				ShowNotification("Clipster - Error", err.Error())
+				return
+			}
+			clips[i].Format = "txt"
+			clips[i].TextDecrypted = "[Error: " + err.Error() + "]"
+			continue
+		}
 		if clips[i].Format == "img" {
 			clips[i] = processClipTextToImages(clips[i])
 		}
 	}
 
 	if last_only {
-		SetClipboard(clips[len(clips)-1])
+		SetClipboard(clips[0])
 	} else {
 		DoGUI(func() { GUI_AllClips(clips) })
 	}
@@ -199,8 +238,18 @@ func DownloadClipsFlow(last_only bool) {
 // uploads it to server and shows notification
 func ShareClipFlow() {
 	log.Println("ShareClipFlow")
-	clip, format := GetClipboard()
-	clip_encrypted := Encrypt(clip)
+	clip, format, err := GetClipboard()
+	if err != nil {
+		ShowNotification("Clipster - Error", "Could not share clip: "+err.Error())
+		log.Println("Error:", err)
+		return
+	}
+	clip_encrypted, err := Encrypt(clip)
+	if err != nil {
+		ShowNotification("Clipster - Error", err.Error())
+		log.Println("Error:", err)
+		return
+	}
 	if err := APIShareClip(clip_encrypted, format); err != nil {
 		ShowNotification("Clipster - Error", err.Error())
 		log.Println("Error:", err)
@@ -213,40 +262,39 @@ func ShareClipFlow() {
 	}
 }
 
-// processClipTextToImages creates a gtk.Image Thumbnail from the original clip Image.
-// Also creates a bytes representation of the Image. Adds all that to the Clip
+// processClipTextToImages decodes the image of a clip and adds its PNG bytes and the PNG
+// bytes of a thumbnail to the clip. It does not use GTK, so it is safe to call from any goroutine
 func processClipTextToImages(clip Clips) Clips {
-
 	img, err := B64ToImage(clip.TextDecrypted)
-	img_thumb := resize.Thumbnail(THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT, img, resize.NearestNeighbor)
-	img_thumb_bytes, err := ImageToBytes(img_thumb)
-	img_thumb_pixbuf, err := gdk.PixbufNewFromBytesOnly(img_thumb_bytes)
-
-	clip.ImageBytes, err = ImageToBytes(img)
-	clip.GtkThumb, err = gtk.ImageNewFromPixbuf(img_thumb_pixbuf)
-
 	if err != nil {
 		log.Println("Error processClipTextToImages:", err)
+		return clip
 	}
-
+	if clip.ImageBytes, err = ImageToBytes(img); err != nil {
+		log.Println("Error processClipTextToImages:", err)
+	}
+	thumb := Thumbnail(THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT, img)
+	if clip.ThumbBytes, err = ImageToBytes(thumb); err != nil {
+		log.Println("Error processClipTextToImages:", err)
+	}
 	return clip
 }
 
 // ImageToDisk shows file saving dialog and saves image file at chosen path
 func ImageToDisk(clip Clips) {
-
-	path := GUI_FileChooserDialog()
-	if path != "" {
-		if clip.Format != "img" {
-			GUI_DialogError("You can only save images to file!")
-			return
-		}
-		err := ioutil.WriteFile(path, clip.ImageBytes, 0644)
-		if err != nil {
-			log.Println("Error: saving file", err)
-			GUI_DialogError("Error saving file: " + path + "\n" + err.Error())
-		}
-		log.Println("Saved file: " + path)
-		GUI_DialogInfo("File saved: " + path)
+	if clip.Format != "img" {
+		GUI_DialogError("You can only save images to file!")
+		return
 	}
+	path := GUI_FileChooserDialog()
+	if path == "" {
+		return
+	}
+	if err := os.WriteFile(path, clip.ImageBytes, 0644); err != nil {
+		log.Println("Error: saving file", err)
+		GUI_DialogError("Error saving file: " + path + "\n" + err.Error())
+		return
+	}
+	log.Println("Saved file: " + path)
+	GUI_DialogInfo("File saved: " + path)
 }

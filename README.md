@@ -3,7 +3,7 @@
 [![GitHub Actions Build Workflow](https://github.com/mc51/Clipster-Desktop/workflows/Build/badge.svg)](https://github.com/mc51/Clipster-Desktop/actions)  
 
 Clipster is a multi platform cloud clipboard:  
-Copy a text on your smartphone and paste it on your desktop, or vice versa.  
+Copy a text or image on your smartphone and paste it on your desktop, or vice versa.  
 Easy, secure, open source.  
 Supports Android, Linux, MacOS, Windows and all browsers.   
 
@@ -21,27 +21,37 @@ There is an alternative [Clipster-Desktop](https://github.com/mc51/Clipster-Desk
 Download [`clipster_linux.zip`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster_linux.zip) from the latest release, extract and start it.  
 To have Clipster auto start, right click on the systray menu and select `Autostart Clipster`.  
   
-Clipster depends on gtk-3.0. To install it on  
-Ubuntu/Debian:  
-`sudo apt-get install libgtk-3-0`  
+Clipster depends on gtk-3.0 and the Ayatana AppIndicator library. To install them on  
+Ubuntu/Debian (>= 22.04 / 12):  
+`sudo apt-get install libgtk-3-0 libayatana-appindicator3-1`  
 
-CentOS/RHEL:  
-`sudo yum install gtk3-devel`
+Fedora/RHEL:  
+`sudo dnf install gtk3 libayatana-appindicator-gtk3`
 
-### Windows  
+### Windows (>= 10)  
 
 Download [`clipster_win.zip`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster_win.zip) from the latest release and extract it. Run `clipster_win.exe` in the `clipster/bin/` folder.  
 To have Clipster auto start, right click on the systray menu and select `Autostart Clipster`.  
 The `.zip` file comes with GTK-3 files that the GUI depends on. Keep the folder structure under `clipster/` so that the files can be found.  
 
-### MacOS (>=10.13 High Sierra)  
+### MacOS (>= 12 Monterey)  
 
-Download [`clipster_mac.zip`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster_mac.zip) from the latest release, extract, move it to `Applications` and start it via `right-click -> open`. You might get a warning message, that you need to ignore. If that fails:
+Download [`clipster_mac.zip`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster_mac.zip) (Apple Silicon) or [`clipster_mac_intel.zip`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster_mac_intel.zip) (Intel) from the latest release, extract, move it to `Applications` and start it via `right-click -> open`. You might get a warning message, that you need to ignore. If that fails:
 Go to `System Preferences --> Security & Privacy`. In the `General` Tab the App will be listed and you can start it from there.  
   
 To have Clipster auto start, right click on the icon in your dock and select `Options --> Open at Login`.  
-  
-*Notice*: M1 processors (ARM architecture) are not (yet) supported.
+
+### Build from source
+
+You need Go (see `go.mod` for the version), a C compiler and the GTK 3 development files. On Ubuntu/Debian:
+
+```bash
+sudo apt-get install gcc libgtk-3-dev libayatana-appindicator3-dev
+go build -o clipster .
+go test ./...
+```
+
+For MacOS and Windows see the [build workflow](.github/workflows/build.yml).
 
 ## Usage
 
