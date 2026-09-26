@@ -64,24 +64,6 @@ Clipster will add an Icon to your system tray which you can click for opening up
 `Autostart Clipster` will add it to auto start.  
 `Quit` will terminate the app.
 
-## Roadmap
-
-- [x] Encrypt / Decrypt clipboard locally and only transmit encrypted data to server
-- [x] Add clipboard history: share multiple Clips
-- [x] Create Go version
-- [x] Add auto start feature
-- [x] Switch GUI from goey to gotk3
-- [x] Support image sharing
-
 ## Contributions
 
 Contributions are very welcome. If you come across a bug, please open an issue. The same thing goes for feature requests.
-
-## Credits
-
-- GUI based on [gotk3](https://github.com/gotk3/gotk3) / GTK3
-- [Systray](https://pkg.go.dev/github.com/getlantern/systray) for tray icon and menu
-- Notifications using [beep](https://github.com/gen2brain/beeep)
-- Config by [Viper](https://github.com/spf13/viper)
-- Crypto using [PBKDF2](https://pkg.go.dev/golang.org/x/crypto/pbkdf2) and [Fernet](https://github.com/fernet/fernet-go)
-- [Clipboard](https://github.com/golang-design/clipboard) functions

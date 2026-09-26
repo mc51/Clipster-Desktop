@@ -100,7 +100,15 @@ jobs:
           (cd gtk-mac-bundler && make install)
           export PKG_CONFIG_PATH="$CONDA/lib/pkgconfig"
           ~/.local/bin/gtk-mac-bundler ./build/bundle/clipster.bundle
-          cd build && zip -r9 ${{ matrix.out_file }} clipster_mac.app/
+          # the bundler's install_name_tool calls invalidate code signatures and
+          # Apple Silicon refuses to load unsigned code, so ad-hoc sign everything again
+          APP=build/clipster_mac.app
+          find "$APP" -type f \( -name '*.dylib' -o -name '*.so' \) -exec codesign --force --sign - {} +
+          codesign --force --sign - "$APP"/Contents/MacOS/*-bin
+          codesign --force --sign - "$APP"
+          codesign --verify --verbose "$APP"/Contents/MacOS/*-bin
+          # ditto keeps the extended attributes holding signatures, unlike zip
+          cd build && ditto -c -k --keepParent clipster_mac.app ${{ matrix.out_file }}
 
       # Windows
       - name: Install MINGW64 (Windows)
