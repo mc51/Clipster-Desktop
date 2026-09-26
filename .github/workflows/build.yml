@@ -76,7 +76,8 @@ jobs:
       - name: Install dependencies (MacOS)
         if: runner.os == 'macOS'
         shell: bash -el {0}
-        run: conda install -y -q -c conda-forge gtk3 glib pkg-config
+        # zlib provides zlib.pc, required by gio-2.0.pc (libzlib only ships the library)
+        run: conda install -y -q -c conda-forge gtk3 glib zlib pkg-config
 
       - name: Build (MacOS)
         if: runner.os == 'macOS'
