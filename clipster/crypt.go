@@ -2,51 +2,58 @@
 package clipster
 
 import (
+	"crypto/pbkdf2"
 	"crypto/sha256"
 	"encoding/base64"
+	"errors"
 	"log"
 
 	"github.com/fernet/fernet-go"
-	"golang.org/x/crypto/pbkdf2"
 )
 
 // deriveKey from password using a salt via PBK2DF and return urlsafe b64
 // cross client compatible by using same parameters and same algos
 func deriveKey(user string, pw string, iters int) string {
 	salt := "clipster_" + user + "_" + pw
-	key := pbkdf2.Key([]byte(pw), []byte(salt), iters, HASH_LENGTH, sha256.New)
-	key_b64 := base64.URLEncoding.EncodeToString(key)
-	log.Println("Ok: derived key string b64", key_b64)
-	return key_b64
+	key, err := pbkdf2.Key(sha256.New, pw, []byte(salt), iters, HASH_LENGTH)
+	if err != nil {
+		log.Panicln("Error: deriving key", err)
+	}
+	return base64.URLEncoding.EncodeToString(key)
 }
 
 // Encrypt the text using Fernet and the hash_msg key
-func Encrypt(text string) string {
-	key := fernet.MustDecodeKeys(conf.Hash_msg)
-	tok, err := fernet.EncryptAndSign([]byte(text), key[0])
+func Encrypt(text string) (string, error) {
+	key, err := fernet.DecodeKey(conf.Hash_msg)
 	if err != nil {
-		log.Panicln("Error:", err)
+		return "", errors.New("no valid encryption key, please edit your credentials")
 	}
-	log.Println("Ok: encrypted token string", string(tok))
-	return string(tok)
+	tok, err := fernet.EncryptAndSign([]byte(text), key)
+	if err != nil {
+		return "", err
+	}
+	return string(tok), nil
 }
 
 // Decrypt decrypts a text using hash_msg as a key and Fernet and returns a string
-func Decrypt(text string) string {
-	key := fernet.MustDecodeKeys(conf.Hash_msg)
-	msg := fernet.VerifyAndDecrypt([]byte(text), 0, key)
-	log.Println("Ok: decrypted text", string(msg))
-	return string(msg)
+func Decrypt(text string) (string, error) {
+	key, err := fernet.DecodeKey(conf.Hash_msg)
+	if err != nil {
+		return "", errors.New("no valid encryption key, please edit your credentials")
+	}
+	msg := fernet.VerifyAndDecrypt([]byte(text), 0, []*fernet.Key{key})
+	if msg == nil {
+		return "", errors.New("could not decrypt clip, was it encrypted with another password?")
+	}
+	return string(msg), nil
 }
 
 // GetLoginHashFromPw returns a hash (string) of the password to be used for authentication
 func GetLoginHashFromPw(user string, pw string) string {
-	hash := deriveKey(user, pw, HASH_ITERS_LOGIN)
-	return hash
+	return deriveKey(user, pw, HASH_ITERS_LOGIN)
 }
 
 // GetMsgHashFromPw returns a hash (string) of the password to be used as encryption key
 func GetMsgHashFromPw(user string, pw string) string {
-	hash := deriveKey(user, pw, HASH_ITERS_MSG)
-	return hash
+	return deriveKey(user, pw, HASH_ITERS_MSG)
 }

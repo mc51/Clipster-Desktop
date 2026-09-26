@@ -15,7 +15,7 @@ type PowerShell struct {
 	powerShell string
 }
 
-var (
+const (
 	LINUX_DESKTOP_ENTRY = `[Desktop Entry]
 Type=Application
 Name=Clipster-Desktop
@@ -25,9 +25,15 @@ Terminal=false
 `
 	WIN_CREATE_SHORTCUT = `$WshShell = New-Object -comObject WScript.Shell
 $Shortcut = $WshShell.CreateShortcut("$HOME\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\clipster.lnk")
-$Shortcut.TargetPath = "PLACEHOLDER"
+$Shortcut.TargetPath = 'PLACEHOLDER'
 $Shortcut.Save()`
 )
+
+// desktopEntryExec quotes a path for the Exec key of a desktop entry
+func desktopEntryExec(path string) string {
+	r := strings.NewReplacer(`\`, `\\\\`, `"`, `\\"`, "`", "\\\\`", `$`, `\\$`)
+	return `"` + r.Replace(path) + `"`
+}
 
 // getAutostartDirAndFile returns the absolute path to auto startup directory and file
 // for different OSes
@@ -75,13 +81,11 @@ func enableAutostartLinux() {
 		log.Panicln("Error", err)
 	}
 	log.Println("Executable is: ", exec_path)
-	LINUX_DESKTOP_ENTRY = strings.Replace(LINUX_DESKTOP_ENTRY, "PLACEHOLDER",
-		exec_path, 1)
+	entry := strings.Replace(LINUX_DESKTOP_ENTRY, "PLACEHOLDER", desktopEntryExec(exec_path), 1)
 
 	if fileExists(startup_dir) {
 		log.Println("Config file folder exists", startup_dir)
-		if err := os.WriteFile(startup_file,
-			[]byte(LINUX_DESKTOP_ENTRY), 0664); err != nil {
+		if err := os.WriteFile(startup_file, []byte(entry), 0664); err != nil {
 			log.Println("Error: could not write autostart file", err)
 		} else {
 			log.Println("Ok: written autostart file", startup_file)
@@ -105,10 +109,12 @@ func enableAutostartWin() {
 		log.Panicln("Error", err)
 	}
 	log.Println("Executable is: ", exec_path)
-	WIN_CREATE_SHORTCUT = strings.Replace(WIN_CREATE_SHORTCUT, "PLACEHOLDER", exec_path, 1)
-	_, _, err = ps.execute(WIN_CREATE_SHORTCUT)
+	script := strings.Replace(WIN_CREATE_SHORTCUT, "PLACEHOLDER",
+		strings.ReplaceAll(exec_path, "'", "''"), 1)
+	_, stdErr, err := ps.execute(script)
 	if err != nil {
-		log.Println("Error: could not create shortcut in startup folder", err)
+		log.Println("Error: could not create shortcut in startup folder", err, stdErr)
+		ShowNotification("Clipster", "Could not add Clipster to autostart:\n"+err.Error())
 	} else {
 		log.Println("Ok: shortcut created")
 		ShowNotification("Clipster", "Added Clipster to autostart by creating "+
@@ -116,22 +122,8 @@ func enableAutostartWin() {
 	}
 }
 
-// disableAutostartLinux removes autostart file and show status in Notification
-func disableAutostartLinux() {
-	if ok, file := isAutostartEnabled(); ok {
-		if err := os.Remove(file); err != nil {
-			log.Println("Error: could not remove autostart file", file)
-			ShowNotification("Clipster", "Could not remove autostart file "+
-				file+"\n"+err.Error())
-		} else {
-			log.Println("Ok: removed autostart file " + file)
-			ShowNotification("Clipster", "Removed autostart file "+file)
-		}
-	}
-}
-
-// disableAutostartWin removes autostart file and show status in Notification
-func disableAutostartWin() {
+// disableAutostartFile removes autostart file (Linux and Windows) and show status in Notification
+func disableAutostartFile() {
 	if ok, file := isAutostartEnabled(); ok {
 		if err := os.Remove(file); err != nil {
 			log.Println("Error: could not remove autostart file", file)
@@ -158,12 +150,10 @@ func enableAutostart() {
 
 // disableAutostart deals with disabling autostart of Clipster on different OSes
 func disableAutostart() {
-	if runtime.GOOS == "linux" {
-		disableAutostartLinux()
+	if runtime.GOOS == "linux" || runtime.GOOS == "windows" {
+		disableAutostartFile()
 	} else if runtime.GOOS == "darwin" {
 		log.Println("RemoveAutostart not implemented on MacOS")
-	} else if runtime.GOOS == "windows" {
-		disableAutostartWin()
 	}
 }
 

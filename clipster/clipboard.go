@@ -2,7 +2,9 @@
 package clipster
 
 import (
+	"context"
 	"encoding/base64"
+	"errors"
 	"log"
 
 	"golang.design/x/clipboard"
@@ -10,30 +12,47 @@ import (
 
 // GetClipboard returns the current local clipboard and its content type.
 // text is raw string, images are png as b64 standard encoded strings
-func GetClipboard() (string, string) {
-	clipBytes := clipboard.Read(clipboard.FmtText)
-	if clipBytes == nil {
-		clipBytes := clipboard.Read(clipboard.FmtImage)
-		clip := base64.StdEncoding.EncodeToString(clipBytes)
-		log.Println("Get Clipboard:", clip)
-		return clip, "img"
+func GetClipboard() (string, string, error) {
+	ctx := context.Background()
+	clipBytes, err := clipboard.Read(ctx, clipboard.FmtText)
+	if err == nil && len(clipBytes) > 0 {
+		log.Println("Get Clipboard: text with length", len(clipBytes))
+		return string(clipBytes), "txt", nil
 	}
-	clip := string(clipBytes)
-	log.Println("Get Clipboard:", clip)
-	return clip, "txt"
+	if err != nil && !errors.Is(err, clipboard.ErrNoData) {
+		return "", "", err
+	}
+
+	clipBytes, err = clipboard.Read(ctx, clipboard.FmtImage)
+	if err == nil && len(clipBytes) > 0 {
+		log.Println("Get Clipboard: image with size", len(clipBytes))
+		return base64.StdEncoding.EncodeToString(clipBytes), "img", nil
+	}
+	if err != nil && !errors.Is(err, clipboard.ErrNoData) {
+		return "", "", err
+	}
+	return "", "", errors.New("clipboard is empty")
 }
 
 // SetClipboard moves clip content to local clipboard and shows notification.
 // Deals with txt and img format
 func SetClipboard(clip Clips) {
-	log.Println(clip)
+	ctx := context.Background()
 	if clip.Format == "img" {
-		clipboard.Write(clipboard.FmtImage, clip.ImageBytes)
+		if _, err := clipboard.Write(ctx, clipboard.FmtImage, clip.ImageBytes); err != nil {
+			log.Println("Error: set clipboard", err)
+			ShowNotification("Clipster - Error", err.Error())
+			return
+		}
 		log.Println("Set Clipboard:", MSG_NOTIFY_GOT_IMAGE)
 		ShowNotification("Clipster – Got new clip", MSG_NOTIFY_GOT_IMAGE)
 	} else {
-		clipboard.Write(clipboard.FmtText, []byte(clip.TextDecrypted))
-		log.Println("Set Clipboard:", clip.TextDecrypted)
+		if _, err := clipboard.Write(ctx, clipboard.FmtText, []byte(clip.TextDecrypted)); err != nil {
+			log.Println("Error: set clipboard", err)
+			ShowNotification("Clipster - Error", err.Error())
+			return
+		}
+		log.Println("Set Clipboard: text with length", len(clip.TextDecrypted))
 		ShowNotification("Clipster – Got new clip", clip.TextDecrypted)
 	}
 }

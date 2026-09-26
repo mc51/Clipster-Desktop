@@ -58,7 +58,6 @@
                     <property name="can-focus">False</property>
                     <property name="hexpand">True</property>
                     <property name="vexpand">True</property>
-                    <signal name="row-selected" handler="list_clips_row_selected_cb" swapped="no"/>
                     <child type="placeholder">
                       <placeholder/>
                     </child>
