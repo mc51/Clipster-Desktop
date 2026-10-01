@@ -9,7 +9,7 @@ require (
 	github.com/getlantern/systray v1.2.2
 	github.com/gotk3/gotk3 v0.6.5-0.20251124190141-e7a9e823ca35
 	github.com/spf13/viper v1.21.0
-	golang.design/x/clipboard v0.10.0
+	golang.design/x/clipboard v0.11.0
 	golang.org/x/image v0.46.0
 )
 
