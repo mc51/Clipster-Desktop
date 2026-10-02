@@ -2,7 +2,7 @@ name: Build
 
 on:
   push:
-    branches: [master]
+    branches: [main]
     tags: ['v*'] # Push events to matching v*, i.e. v1.0, v20.15.10
   pull_request:
   workflow_dispatch:
@@ -139,13 +139,34 @@ jobs:
         if: runner.os == 'Windows'
         shell: msys2 {0}
         run: |
-          mkdir -p build/clipster build/lib/ build/share/glib-2.0/ build/share/icons/Adwaita/
-          mv /mingw64/bin/*.dll build/bin/
-          mv /mingw64/share/icons/hicolor/ build/share/icons/
+          LOADERS=lib/gdk-pixbuf-2.0/2.10.0/loaders
+          mkdir -p build/clipster build/$LOADERS build/share/glib-2.0/schemas/ \
+            build/share/icons/hicolor/ build/share/icons/Adwaita/
+
+          # GTK only ever decodes PNG (icons and thumbnails), so ship just that pixbuf loader
+          cp /mingw64/$LOADERS/libpixbufloader-png.dll build/$LOADERS/
+          awk -v RS= -v ORS='\n\n' '/libpixbufloader-png\.dll/' \
+            /mingw64/$LOADERS/../loaders.cache > build/$LOADERS/../loaders.cache
+
+          # copy only the DLLs reachable from the import tables of the exe and the loader
+          declare -A seen
+          queue=(build/bin/clipster_win.exe build/$LOADERS/libpixbufloader-png.dll)
+          while [ ${#queue[@]} -gt 0 ]; do
+            for dll in $(objdump -p "${queue[0]}" | sed -n 's/^\s*DLL Name: //p'); do
+              if [ -z "${seen[$dll]}" ] && [ -f "/mingw64/bin/$dll" ]; then
+                seen[$dll]=1
+                cp "/mingw64/bin/$dll" build/bin/
+                queue+=("/mingw64/bin/$dll")
+              fi
+            done
+            queue=("${queue[@]:1}")
+          done
+          echo "Bundled ${#seen[@]} DLLs: ${!seen[*]}"
+
+          cp /mingw64/share/glib-2.0/schemas/gschemas.compiled build/share/glib-2.0/schemas/
+          cp /mingw64/share/icons/hicolor/index.theme build/share/icons/hicolor/
           cp /mingw64/share/icons/Adwaita/* build/share/icons/Adwaita/ || :
-          mv /mingw64/share/icons/Adwaita/16x16/ build/share/icons/Adwaita/ || :
-          mv /mingw64/share/glib-2.0/schemas/ build/share/glib-2.0/
-          mv /mingw64/lib/gdk-pixbuf-2.0/ build/lib/
+          cp -r /mingw64/share/icons/Adwaita/16x16/ build/share/icons/Adwaita/ || :
           cd build && mv bin lib share clipster/
           zip -r9 ${{ matrix.out_file }} clipster/
 
