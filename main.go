@@ -28,10 +28,7 @@ func main() {
 
 	// Runs on the main goroutine once the event loop is up
 	a.Lifecycle().SetOnStarted(func() {
-		if err := clipster.OpenConfigFile(); err != nil {
-			log.Println("Error:", err)
-			clipster.GUI_ConfigWindow()
-		} else if _, err := clipster.LoadConfigFromFile(); err != nil {
+		if _, err := clipster.LoadConfigFromFile(); err != nil {
 			log.Println("Error:", err)
 			clipster.GUI_ConfigWindow()
 		}

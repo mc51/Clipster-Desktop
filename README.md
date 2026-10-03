@@ -61,7 +61,7 @@ See the [build workflow](.github/workflows/build.yml) for details.
 
 ## Usage
 
-On the first startup, you can register a new account or enter your existing credentials for the login. Your credentials will be stored in your `HOMEPATH` in `./config/clipster/config.yaml`.  
+On the first startup, you can register a new account or enter your existing credentials for the login. Your credentials will be stored in your home folder in `.config/clipster/config.toml`. Versions before 0.5.0 used `config.yaml` instead, so log in again after updating.  
 Clipster will add an Icon to your system tray which you can click for opening up a menu with the following options:  
 `Get last Clip` will fetch the last shared Clip from the server and put it into your clipboard.  
 `Get all Clips` will fetch all shared Clips from the server and display them to you.  

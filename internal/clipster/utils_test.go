@@ -79,6 +79,90 @@ func TestSaveCredentials(t *testing.T) {
 	if runtime.GOOS != "windows" && info.Mode().Perm() != 0600 {
 		t.Errorf("config file permissions = %v, want 0600", info.Mode().Perm())
 	}
+	if loaded, err := LoadConfigFromFile(); err != nil || loaded != c {
+		t.Errorf("LoadConfigFromFile = %+v, %v, want %+v", loaded, err, c)
+	}
+}
+
+func TestWriteConfigFileOverwrites(t *testing.T) {
+	oldPath := CONFIG_FILEPATH
+	CONFIG_FILEPATH = filepath.Join(t.TempDir(), "new folder", CONFIG_FILENAME)
+	t.Cleanup(func() {
+		CONFIG_FILEPATH = oldPath
+		setConf(Config{})
+	})
+
+	if err := WriteConfigFile(Config{Server: "https://a.example", Username: "a", Hash_login: "l", Hash_msg: "m"}); err != nil {
+		t.Fatal(err)
+	}
+	if runtime.GOOS != "windows" {
+		if err := os.Chmod(CONFIG_FILEPATH, 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	want := Config{"https://b.example", "b", "l2", "m2", true}
+	if err := WriteConfigFile(want); err != nil {
+		t.Fatal(err)
+	}
+	if got, err := LoadConfigFromFile(); err != nil || got != want {
+		t.Errorf("LoadConfigFromFile = %+v, %v, want %+v", got, err, want)
+	}
+	if info, err := os.Stat(CONFIG_FILEPATH); err != nil {
+		t.Fatal(err)
+	} else if runtime.GOOS != "windows" && info.Mode().Perm() != 0600 {
+		t.Errorf("rewritten config file permissions = %v, want 0600", info.Mode().Perm())
+	}
+	if files, _ := os.ReadDir(filepath.Dir(CONFIG_FILEPATH)); len(files) != 1 {
+		t.Errorf("config folder should only contain the config file, got %d files", len(files))
+	}
+}
+
+func TestLoadConfigFromFileInvalid(t *testing.T) {
+	dir := t.TempDir()
+	oldPath := CONFIG_FILEPATH
+	t.Cleanup(func() {
+		CONFIG_FILEPATH = oldPath
+		setConf(Config{})
+	})
+	files := map[string]string{
+		"missing":    "",
+		"not toml":   "server: https://clipster.cc\nusername: bob\n",
+		"incomplete": "server = \"https://clipster.cc\"\nusername = \"bob\"\n",
+	}
+	for name, content := range files {
+		CONFIG_FILEPATH = filepath.Join(dir, name+".toml")
+		if name != "missing" {
+			if err := os.WriteFile(CONFIG_FILEPATH, []byte(content), 0600); err != nil {
+				t.Fatal(err)
+			}
+		}
+		if _, err := LoadConfigFromFile(); err == nil {
+			t.Errorf("%s config should not load", name)
+		}
+		if getConf() != (Config{}) {
+			t.Errorf("%s config must not become the active config", name)
+		}
+	}
+}
+
+func TestFindConfigFile(t *testing.T) {
+	first, second, third := t.TempDir(), t.TempDir(), t.TempDir()
+	dirs := []string{first, second, third}
+	if got, want := findConfigFile(dirs), filepath.Join(first, CONFIG_FILENAME); got != want {
+		t.Errorf("without any config file got %q, want %q", got, want)
+	}
+	// an old config.yaml does not count
+	if err := os.WriteFile(filepath.Join(second, "config.yaml"), nil, 0600); err != nil {
+		t.Fatal(err)
+	}
+	for _, dir := range []string{third, second} {
+		if err := os.WriteFile(filepath.Join(dir, CONFIG_FILENAME), nil, 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if got, want := findConfigFile(dirs), filepath.Join(second, CONFIG_FILENAME); got != want {
+		t.Errorf("got %q, want first folder containing a config file %q", got, want)
+	}
 }
 
 func TestAreCredsComplete(t *testing.T) {

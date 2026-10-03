@@ -2,22 +2,21 @@
 package clipster
 
 import (
+	"errors"
 	"log"
 	"os"
 	"path/filepath"
-	"reflect"
 	"sync"
 
 	"fyne.io/fyne/v2"
-	"github.com/spf13/viper"
+	"github.com/BurntSushi/toml"
 	"golang.design/x/clipboard"
 )
 
 var CONFIG_PATHS []string
 var CONFIG_FILEPATH string
 
-const CONFIG_FILENAME = "config.yaml"
-const CONFIG_TYPE = "yaml"
+const CONFIG_FILENAME = "config.toml"
 
 const HOST_DEFAULT string = "https://clipster.cc"
 const RE_HOSTNAME string = `^(https):\/\/[^\s\/$.?#].[^\s]*|://localhost:|://127.0.0.1:|^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$`
@@ -39,19 +38,17 @@ const HASH_ITERS_MSG = 10000
 const HASH_LENGTH = 32
 
 type Config struct {
-	Server                 string
-	Username               string
-	Hash_login             string
-	Hash_msg               string
-	Disable_ssl_cert_check bool
+	Server                 string `toml:"server"`
+	Username               string `toml:"username"`
+	Hash_login             string `toml:"hash_login"`
+	Hash_msg               string `toml:"hash_msg"`
+	Disable_ssl_cert_check bool   `toml:"disable_ssl_cert_check"`
 }
 
 var (
 	// conf is read by flows running in the background, so only access it via getConf and setConf
 	conf   Config
 	confMu sync.RWMutex
-	// viper is not safe for concurrent use, serialize writing the config file
-	writeConfigMu sync.Mutex
 )
 
 // getConf returns a copy of the active config
@@ -78,84 +75,69 @@ func Init(a fyne.App) {
 	}
 }
 
-// OpenConfigFile looks for config file in standard config folders and tries to open it
-func OpenConfigFile() error {
-	log.Println("Trying to open config file")
-	viper.SetConfigName(CONFIG_FILENAME)
-	viper.SetConfigType(CONFIG_TYPE)
-	for _, v := range CONFIG_PATHS {
-		viper.AddConfigPath(v)
-	}
-	if err := viper.ReadInConfig(); err != nil {
-		return err
-	}
-	log.Println("Ok: Read Config", viper.ConfigFileUsed())
-	return nil
-}
-
-// LoadConfigFromFile loads the credentials from the already opened config file
+// LoadConfigFromFile reads the credentials from the config file and makes them the active config
 func LoadConfigFromFile() (Config, error) {
-	log.Println("Loading config file to struct")
+	log.Println("Loading config file", CONFIG_FILEPATH)
 	var c Config
-	if err := viper.Unmarshal(&c); err != nil {
-		log.Println("Error: Could not decode config into struct")
+	if _, err := toml.DecodeFile(CONFIG_FILEPATH, &c); err != nil {
 		return c, err
 	}
+	if c.Server == "" || c.Username == "" || c.Hash_login == "" || c.Hash_msg == "" {
+		return c, errors.New("config file is incomplete: " + CONFIG_FILEPATH)
+	}
 	setConf(c)
-	log.Println("Ok: loaded config into struct for user", c.Username, "on", c.Server)
+	log.Println("Ok: loaded config for user", c.Username, "on", c.Server)
 	return c, nil
 }
 
-// WriteConfigFile writes config struct to file
+// WriteConfigFile writes config struct to file. A temporary file is renamed over the
+// config, so that it is never left half written and always only readable by the user
 func WriteConfigFile(c Config) error {
-	writeConfigMu.Lock()
-	defer writeConfigMu.Unlock()
 	log.Println("Writing config for user", c.Username, "on", c.Server)
-	v := reflect.ValueOf(c)
-	typeOfS := v.Type()
-
-	for i := 0; i < v.NumField(); i++ {
-		viper.Set(typeOfS.Field(i).Name, v.Field(i).Interface())
-	}
-	// contains the encryption key, so keep it private
-	viper.SetConfigPermissions(0600)
-	if err := viper.WriteConfigAs(CONFIG_FILEPATH); err != nil {
-		log.Println("Error: writing config", err)
+	if err := os.MkdirAll(filepath.Dir(CONFIG_FILEPATH), 0700); err != nil {
 		return err
 	}
-	return os.Chmod(CONFIG_FILEPATH, 0600)
+	// created with permissions 0600
+	f, err := os.CreateTemp(filepath.Dir(CONFIG_FILEPATH), CONFIG_FILENAME+".*")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(f.Name()) // fails harmlessly once renamed
+	if err := toml.NewEncoder(f).Encode(c); err != nil {
+		f.Close()
+		return err
+	}
+	if err := f.Close(); err != nil {
+		return err
+	}
+	return os.Rename(f.Name(), CONFIG_FILEPATH)
 }
 
-// initConfigPaths checks if at least one config folder exists, otherwise creates it
-// it sets CONFIG_FILEPATH to this path
+// initConfigPaths sets CONFIG_FILEPATH to the config file in the first of the standard
+// config folders that contains one. Otherwise it points into the user's config folder
 func initConfigPaths() {
-	log.Printf("initConfigPaths")
 	homedir, err := os.UserHomeDir()
 	if err != nil {
 		log.Panicln("Error:", err)
 	}
-
 	CONFIG_PATHS = []string{
 		filepath.Join(homedir, ".config", "clipster"),
 		filepath.Join(homedir, ".clipster"),
 		filepath.FromSlash("/etc/clipster"),
 	}
+	CONFIG_FILEPATH = findConfigFile(CONFIG_PATHS)
+	log.Println("Config file is", CONFIG_FILEPATH)
+}
 
-	for _, path := range CONFIG_PATHS {
-		if fileExists(path) {
-			log.Println("Config file folder exists", path)
-			CONFIG_FILEPATH = filepath.Join(path, CONFIG_FILENAME)
-			return
+// findConfigFile returns the path of the config file in the first folder of dirs that
+// contains one, or the path in the first folder if none does
+func findConfigFile(dirs []string) string {
+	for _, dir := range dirs {
+		if path := filepath.Join(dir, CONFIG_FILENAME); fileExists(path) {
+			return path
 		}
 	}
-
-	log.Println("Error: No config file folder exists")
-	log.Println("Creating config file folder", CONFIG_PATHS[0])
-	if err := os.MkdirAll(CONFIG_PATHS[0], 0700); err != nil {
-		log.Panicln(err)
-	}
-	CONFIG_FILEPATH = filepath.Join(CONFIG_PATHS[0], CONFIG_FILENAME)
-	log.Println("Created config file folder", CONFIG_PATHS[0])
+	return filepath.Join(dirs[0], CONFIG_FILENAME)
 }
 
 // fileExists checks if a file or folder exists
