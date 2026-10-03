@@ -30,6 +30,7 @@ The systray needs StatusNotifier support. On GNOME install the [AppIndicator ext
 ### Windows (>= 10)  
 
 Download [`clipster_win.zip`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster_win.zip) from the latest release, extract it and run `clipster_win.exe`. It is a single file without any dependencies.  
+Windows may flag the downloaded file and refuse to run it. In that case, right click on `clipster_win.exe`, open `Properties`, tick `Unblock` in the `General` tab and click `OK`.  
 To have Clipster auto start, right click on the systray menu and select `Autostart Clipster`.  
 
 ### MacOS (>= 12 Monterey)  
