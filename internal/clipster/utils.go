@@ -5,13 +5,13 @@ import (
 	"bytes"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"image"
 	_ "image/gif"
 	_ "image/jpeg"
 	"image/png"
 	"log"
 	"net/http"
-	"os"
 	"regexp"
 	"strings"
 
@@ -19,20 +19,12 @@ import (
 	_ "golang.org/x/image/bmp"
 	"golang.org/x/image/draw"
 
-	"github.com/gotk3/gotk3/gdk"
-	"github.com/gotk3/gotk3/glib"
+	"fyne.io/fyne/v2"
+
+	"clipster/assets"
 )
 
 var reHostname = regexp.MustCompile(RE_HOSTNAME)
-
-// BytesToPixbuf takes Image in bytes and returns gdk.Pixbuf representation
-func BytesToPixbuf(img []byte) *gdk.Pixbuf {
-	i, err := gdk.PixbufNewFromBytesOnly(img)
-	if err != nil {
-		log.Println("Could not create icon", err)
-	}
-	return i
-}
 
 // BytesToImage reads bytes and returns image.Image. If bytes are not a valid Image
 // return a default "file not found" Image
@@ -45,7 +37,7 @@ func BytesToImage(img []byte) (image.Image, error) {
 	if err != nil {
 		log.Println("Error BytesToImage:", err)
 		log.Println("Returning 'missing file' image instead")
-		img_decoded, _, err = image.Decode(bytes.NewReader(PNG_BYTES_IMAGE_NOTFOUND))
+		img_decoded, _, err = image.Decode(bytes.NewReader(assets.NotFoundPNG))
 	}
 	return img_decoded, err
 }
@@ -110,11 +102,11 @@ func AreCredsComplete(host string, user string, pw string) (string, string, stri
 		host = HOST_DEFAULT
 	}
 	if !isHostnameValid(host) {
-		err = errors.New(" Please enter a valid hostname")
+		err = errors.New("Please enter a valid hostname")
 	} else if user == "" {
-		err = errors.New(" Please enter an username")
+		err = errors.New("Please enter an username")
 	} else if pw == "" {
-		err = errors.New(" Please enter a password")
+		err = errors.New("Please enter a password")
 	}
 	return host, user, pw, err
 }
@@ -124,73 +116,58 @@ func isHostnameValid(host string) bool {
 	return reHostname.MatchString(host)
 }
 
-// DoGUI adds function to be run on GTK Main loop / main thread
-func DoGUI(action func()) {
-	// Native GTK is not thread safe, and thus, gotk3's GTK bindings may not
-	// be used from other goroutines.  Instead, glib.IdleAdd() must be used
-	// to add a function to run in the GTK main loop when it is in an idle
-	// state. See:
-	// https://github.com/gotk3/gotk3-examples/blob/master/gtk-examples/goroutines/goroutines.go
-	glib.IdleAdd(action)
-}
-
-// login_flow check for completeness of creds, creates hash from them,
-// uses hash to authenticate against API endpoint, displays Message box with the result.
-// On success saves credentials to config
-func login_flow(host string, user string, pw string, ssl_disable bool) error {
+// login_flow checks for completeness of creds, creates hash from them and
+// uses hash to authenticate against API endpoint. On success saves credentials to config.
+// Blocks on the network, so do not call it from the GUI goroutine.
+// Returns a message describing the result to be displayed to the user
+func login_flow(host string, user string, pw string, ssl_disable bool) (string, error) {
 	host, user, pw, err := AreCredsComplete(host, user, pw)
 	if err != nil {
-		GUI_DialogError("Error: " + err.Error())
 		log.Println("Error:", err)
-		return err
+		return "", err
 	}
 	log.Println("Login:", host, user, ssl_disable)
 
 	hash_login := GetLoginHashFromPw(user, pw)
-	// TODO: This is blocking. Goroutine?
 	if err := APILogin(host, user, hash_login, ssl_disable); err != nil {
 		log.Println("Error:", err)
-		GUI_DialogError("Error: " + err.Error())
-		return err
+		return "", err
 	}
 	return saveCredentials(Config{host, user, hash_login, GetMsgHashFromPw(user, pw), ssl_disable},
 		"Login successful")
 }
 
-// register_flow check for completeness of creds, creates hash from them,
-// uses hash to register at API endpoint, displays Message box with the result.
-// On success saves credentials to config
-func register_flow(host string, user string, pw string, ssl_disable bool) error {
+// register_flow checks for completeness of creds, creates hash from them and
+// uses hash to register at API endpoint. On success saves credentials to config.
+// Blocks on the network, so do not call it from the GUI goroutine.
+// Returns a message describing the result to be displayed to the user
+func register_flow(host string, user string, pw string, ssl_disable bool) (string, error) {
 	host, user, pw, err := AreCredsComplete(host, user, pw)
 	if err != nil {
-		GUI_DialogError("Error: " + err.Error())
 		log.Println("Error:", err)
-		return err
+		return "", err
 	}
 	log.Println("Registration:", host, user, ssl_disable)
 
 	hash_login := GetLoginHashFromPw(user, pw)
-	// TODO: This is blocking. Goroutine?
 	if err := APIRegister(host, user, hash_login, ssl_disable); err != nil {
 		log.Println("Error:", err)
-		GUI_DialogError("Error: " + err.Error())
-		return err
+		return "", err
 	}
 	return saveCredentials(Config{host, user, hash_login, GetMsgHashFromPw(user, pw), ssl_disable},
 		"Registration successful")
 }
 
-// saveCredentials makes c the active config, writes it to disk and displays the result
-func saveCredentials(c Config, msg string) error {
-	conf = c
-	if err := WriteConfigFile(conf); err != nil {
-		GUI_DialogError(msg + "\nBut credentials could not be saved to config:\n" +
-			CONFIG_FILEPATH + "\n" + err.Error())
-		return err
+// saveCredentials makes c the active config and writes it to disk.
+// Returns the message to display to the user
+func saveCredentials(c Config, msg string) (string, error) {
+	setConf(c)
+	if err := WriteConfigFile(c); err != nil {
+		return "", fmt.Errorf("%s\nBut credentials could not be saved to config:\n%s\n%w",
+			msg, CONFIG_FILEPATH, err)
 	}
 	log.Println("Ok:", msg)
-	GUI_DialogInfo(msg + "\nCredentials saved to config:\n" + CONFIG_FILEPATH)
-	return nil
+	return msg + "\nCredentials saved to config:\n" + CONFIG_FILEPATH, nil
 }
 
 // DownloadClipsFlow downloads all clips from API, unencrypts text and
@@ -230,7 +207,7 @@ func DownloadClipsFlow(last_only bool) {
 	if last_only {
 		SetClipboard(clips[0])
 	} else {
-		DoGUI(func() { GUI_AllClips(clips) })
+		fyne.Do(func() { GUI_AllClips(clips) })
 	}
 }
 
@@ -263,7 +240,7 @@ func ShareClipFlow() {
 }
 
 // processClipTextToImages decodes the image of a clip and adds its PNG bytes and the PNG
-// bytes of a thumbnail to the clip. It does not use GTK, so it is safe to call from any goroutine
+// bytes of a thumbnail to the clip. It does not touch the GUI, so it is safe to call from any goroutine
 func processClipTextToImages(clip Clips) Clips {
 	img, err := B64ToImage(clip.TextDecrypted)
 	if err != nil {
@@ -278,23 +255,4 @@ func processClipTextToImages(clip Clips) Clips {
 		log.Println("Error processClipTextToImages:", err)
 	}
 	return clip
-}
-
-// ImageToDisk shows file saving dialog and saves image file at chosen path
-func ImageToDisk(clip Clips) {
-	if clip.Format != "img" {
-		GUI_DialogError("You can only save images to file!")
-		return
-	}
-	path := GUI_FileChooserDialog()
-	if path == "" {
-		return
-	}
-	if err := os.WriteFile(path, clip.ImageBytes, 0644); err != nil {
-		log.Println("Error: saving file", err)
-		GUI_DialogError("Error saving file: " + path + "\n" + err.Error())
-		return
-	}
-	log.Println("Saved file: " + path)
-	GUI_DialogInfo("File saved: " + path)
 }

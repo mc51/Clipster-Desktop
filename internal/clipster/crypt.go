@@ -24,7 +24,7 @@ func deriveKey(user string, pw string, iters int) string {
 
 // Encrypt the text using Fernet and the hash_msg key
 func Encrypt(text string) (string, error) {
-	key, err := fernet.DecodeKey(conf.Hash_msg)
+	key, err := fernet.DecodeKey(getConf().Hash_msg)
 	if err != nil {
 		return "", errors.New("no valid encryption key, please edit your credentials")
 	}
@@ -37,7 +37,7 @@ func Encrypt(text string) (string, error) {
 
 // Decrypt decrypts a text using hash_msg as a key and Fernet and returns a string
 func Decrypt(text string) (string, error) {
-	key, err := fernet.DecodeKey(conf.Hash_msg)
+	key, err := fernet.DecodeKey(getConf().Hash_msg)
 	if err != nil {
 		return "", errors.New("no valid encryption key, please edit your credentials")
 	}
