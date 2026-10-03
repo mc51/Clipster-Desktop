@@ -14,11 +14,32 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
 
-# All packaging is done by the fyne tool, which is pinned in go.mod (`tool` directive)
+# All packaging is done by the fyne tool, which is pinned in go.mod (`tool` directive).
+# Every job produces one clipster_<os>.zip, which is uploaded as is (`archive: false`), so
+# that downloading the artifact does not wrap it into another zip
 jobs:
-  linux-windows:
-    name: Build Linux and Windows
-    # oldest supported Ubuntu for broad glibc compatibility of the Linux binary
+  version:
+    name: Get version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v7
+
+      - name: Get version
+        id: version
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=$(sed -n 's/^ *Version = "\(.*\)"/\1/p' FyneApp.toml)" >> "$GITHUB_OUTPUT"
+          fi
+
+  linux:
+    name: Build Linux
+    needs: version
+    # oldest supported Ubuntu for broad glibc compatibility of the binary
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout repo
@@ -32,31 +53,52 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get -y install gcc libgl1-mesa-dev xorg-dev libwayland-dev libxkbcommon-dev \
-            gcc-mingw-w64-x86-64
+          sudo apt-get -y install gcc libgl1-mesa-dev xorg-dev libwayland-dev libxkbcommon-dev p7zip-full
 
       - name: Vet and test
         run: |
           go vet ./...
           go test ./...
 
-      - name: Get version
-        id: version
-        run: |
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
-            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
-          else
-            echo "version=$(sed -n 's/^ *Version = "\(.*\)"/\1/p' FyneApp.toml)" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Package (Linux)
+      - name: Package
         run: |
           go tool fyne package --os linux --release \
-            --app-version "${{ steps.version.outputs.version }}" --app-build "${{ github.run_number }}"
-          mkdir -p dist
-          mv Clipster.tar.xz dist/clipster_linux.tar.xz
+            --app-version "${{ needs.version.outputs.version }}" --app-build "${{ github.run_number }}"
+          # Repack the tar.xz of fyne (clipster/Makefile, clipster/usr/...) into a zip.
+          # 7z keeps the executable bit and compresses better than zip -9
+          mkdir -p build/pkg dist
+          tar -xJf Clipster.tar.xz -C build/pkg
+          (cd build/pkg && 7z a -bd -tzip -mx=9 ../../dist/clipster_linux.zip clipster)
+          unzip -l dist/clipster_linux.zip
+          ls -l dist
 
-      - name: Package (Windows)
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          path: dist/clipster_linux.zip
+          archive: false
+          if-no-files-found: error
+
+  windows:
+    name: Build Windows
+    needs: version
+    # cross compiled with MinGW, which is simpler and faster than building on Windows
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v7
+
+      - name: Install Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install gcc-mingw-w64-x86-64 p7zip-full
+
+      - name: Package
         env:
           CC: x86_64-w64-mingw32-gcc
           GOARCH: amd64
@@ -67,27 +109,29 @@ jobs:
           # Windows target and would break building the tool itself
           FYNE=$(env -u CC -u GOARCH -u GOFLAGS go tool -n fyne)
           "$FYNE" package --os windows --release \
-            --app-version "${{ steps.version.outputs.version }}" --app-build "${{ github.run_number }}"
-          mv Clipster.exe dist/clipster_win.exe
+            --app-version "${{ needs.version.outputs.version }}" --app-build "${{ github.run_number }}"
+          mkdir -p build/pkg dist
+          mv Clipster.exe build/pkg/clipster_win.exe
           echo "Imported DLLs:"
-          x86_64-w64-mingw32-objdump -p dist/clipster_win.exe | sed -n 's/^\s*DLL Name: //p' | sort -u
-          if x86_64-w64-mingw32-objdump -p dist/clipster_win.exe | grep -iE 'DLL Name: (libgcc|libwinpthread|libstdc)'; then
+          x86_64-w64-mingw32-objdump -p build/pkg/clipster_win.exe | sed -n 's/^\s*DLL Name: //p' | sort -u
+          if x86_64-w64-mingw32-objdump -p build/pkg/clipster_win.exe | grep -iE 'DLL Name: (libgcc|libwinpthread|libstdc)'; then
             echo "::error::exe depends on MinGW runtime DLLs"
             exit 1
           fi
-
-      - name: Show artifact sizes
-        run: ls -l dist
+          (cd build/pkg && 7z a -bd -tzip -mx=9 ../../dist/clipster_win.zip clipster_win.exe)
+          unzip -l dist/clipster_win.zip
+          ls -l dist
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: linux-windows
-          path: dist/*
+          path: dist/clipster_win.zip
+          archive: false
           if-no-files-found: error
 
   macos:
     name: Build macOS
+    needs: version
     runs-on: macos-15
     env:
       MACOSX_DEPLOYMENT_TARGET: '12.0'
@@ -99,15 +143,6 @@ jobs:
         uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
-
-      - name: Get version
-        id: version
-        run: |
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
-            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
-          else
-            echo "version=$(sed -n 's/^ *Version = "\(.*\)"/\1/p' FyneApp.toml)" >> "$GITHUB_OUTPUT"
-          fi
 
       # One universal binary (Apple Silicon and Intel) instead of one download per architecture.
       # The name of the binary ends up in the app bundle
@@ -121,28 +156,29 @@ jobs:
           lipo -create -output build/universal/clipster build/arm64/clipster build/amd64/clipster
           lipo -info build/universal/clipster
 
-      - name: Create app bundle
+      - name: Package
         run: |
           go tool fyne package --os darwin --release --executable build/universal/clipster \
-            --app-version "${{ steps.version.outputs.version }}" --app-build "${{ github.run_number }}"
+            --app-version "${{ needs.version.outputs.version }}" --app-build "${{ github.run_number }}"
           # Apple Silicon refuses to run unsigned code, so ad-hoc sign the bundle
           codesign --force --deep --sign - Clipster.app
           codesign --verify --verbose Clipster.app
           mkdir -p dist
           # ditto keeps the extended attributes holding signatures, unlike zip
-          ditto -c -k --keepParent Clipster.app dist/clipster_mac.zip
+          ditto -c -k --keepParent --zlibCompressionLevel 9 Clipster.app dist/clipster_mac.zip
+          unzip -l dist/clipster_mac.zip
           ls -l dist
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: macos
           path: dist/clipster_mac.zip
+          archive: false
           if-no-files-found: error
 
   release:
     name: Create Release
-    needs: [linux-windows, macos]
+    needs: [linux, windows, macos]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
@@ -152,10 +188,17 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           path: dist
+          pattern: clipster_*.zip
           merge-multiple: true
+          # the artifacts are the release zips themselves, do not extract them
+          skip-decompress: true
+
+      - name: Show release files
+        run: ls -l dist
 
       - name: Create release and upload assets
         uses: softprops/action-gh-release@v3
         with:
           name: Release ${{ github.ref_name }}
-          files: dist/*
+          files: dist/clipster_*.zip
+          fail_on_unmatched_files: true

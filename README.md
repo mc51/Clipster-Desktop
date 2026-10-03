@@ -18,7 +18,7 @@ There is an alternative [Clipster-Desktop](https://github.com/mc51/Clipster-Desk
 
 ### Linux
 
-Download [`clipster_linux.tar.xz`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster_linux.tar.xz) from the latest release and extract it. Then either run the binary `clipster/usr/local/bin/clipster` directly, or install it for your user with `make user-install` (or system wide with `sudo make install`) in the extracted `clipster/` folder.  
+Download [`clipster_linux.zip`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster_linux.zip) from the latest release and extract it. Then either run the binary `clipster/usr/local/bin/clipster` directly, or install it for your user with `make user-install` (or system wide with `sudo make install`) in the extracted `clipster/` folder.  
 To have Clipster auto start, right click on the systray menu and select `Autostart Clipster`.  
 
 Clipster only needs OpenGL and X11 or Wayland, which every desktop has. Most distributions have them installed already. If not, on  
@@ -29,7 +29,7 @@ The systray needs StatusNotifier support. On GNOME install the [AppIndicator ext
 
 ### Windows (>= 10)  
 
-Download [`clipster_win.exe`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster_win.exe) from the latest release and run it. It is a single file without any dependencies.  
+Download [`clipster_win.zip`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster_win.zip) from the latest release, extract it and run `clipster_win.exe`. It is a single file without any dependencies.  
 To have Clipster auto start, right click on the systray menu and select `Autostart Clipster`.  
 
 ### MacOS (>= 12 Monterey)  
@@ -57,7 +57,7 @@ go tool fyne package --os windows --release   # Clipster.exe, can be cross compi
 go tool fyne package --os darwin --release    # Clipster.app
 ```
 
-See the [build workflow](.github/workflows/build.yml) for details.
+See the [build workflow](.github/workflows/build.yml) for details, it also repacks them into the `clipster_<os>.zip` release files.
 
 ## Usage
 
