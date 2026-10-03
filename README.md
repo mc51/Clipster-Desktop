@@ -88,7 +88,7 @@ Clips are encrypted on your device before they are sent, the server only stores 
 ## Code signing policy
 
 Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by [SignPath Foundation](https://signpath.org).  
-This applies to the Windows release `clipster_win.exe`. Signing is being set up, releases up to v0.6.0 are not signed yet.
+This applies to the Windows release `clipster_win.exe`. Signing is being set up, releases up to v0.7.0 are not signed yet.
 
 All release files are built by the [build workflow](.github/workflows/build.yml) from this repository. Every release must be approved manually before it is signed.
 
