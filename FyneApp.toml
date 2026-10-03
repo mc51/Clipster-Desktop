@@ -4,5 +4,5 @@ Website = "https://github.com/mc51/Clipster-Desktop"
 Icon = "assets/Icon.png"
 Name = "Clipster"
 ID = "cc.clipster.desktop"
-Version = "0.5.0"
+Version = "0.0.1+dev"
 Build = 5

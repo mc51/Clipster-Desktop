@@ -186,6 +186,38 @@ func TestAreCredsComplete(t *testing.T) {
 	}
 }
 
+func TestIsHostnameValid(t *testing.T) {
+	tests := []struct {
+		host string
+		want bool
+	}{
+		{"https://example.com", true},
+		{"https://example.com:8443/clipster", true},
+		{"http://localhost:8000", true},
+		{"http://127.0.0.1:8000", true},
+		{"http://localhost", true},
+		{"http://example.com", false},
+		{"http://192.168.1.5:8000", false},
+		{"http://evil.com/?a=://localhost:", false},
+		{"http://evil.com/x://127.0.0.1:", false},
+		{"http://localhost.evil.com", false},
+		{"https://user:pw@example.com", false},
+		{"https://user@example.com", false},
+		{"https://example.com?x=1", false},
+		{"https://example.com#x", false},
+		{"https://", false},
+		{"192.168.1.5", false},
+		{"example.com", false},
+		{"ftp://example.com", false},
+		{"https://exa mple.com", false},
+	}
+	for _, tt := range tests {
+		if got := isHostnameValid(tt.host); got != tt.want {
+			t.Errorf("isHostnameValid(%q) = %v, want %v", tt.host, got, tt.want)
+		}
+	}
+}
+
 func TestTruncate(t *testing.T) {
 	if got := truncate("short", 10); got != "short" {
 		t.Errorf("truncate = %q", got)

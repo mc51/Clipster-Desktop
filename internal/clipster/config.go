@@ -19,15 +19,14 @@ var CONFIG_FILEPATH string
 const CONFIG_FILENAME = "config.toml"
 
 const HOST_DEFAULT string = "https://clipster.cc"
-const RE_HOSTNAME string = `^(https):\/\/[^\s\/$.?#].[^\s]*|://localhost:|://127.0.0.1:|^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$`
-
 const API_URI_COPY_PASTE = "/copy-paste/"
 const API_URI_REGISTER = "/register/"
 const API_URI_LOGIN = "/verify-user/"
 const API_REQ_TIMEOUT = 6
 
 const MAX_NOTIFICATION_LENGTH = 200
-const MSG_NOTIFY_GOT_IMAGE = "Got an image!"
+const MSG_NOTIFY_SHARED = "Your clip was shared"
+const MSG_NOTIFY_GOT_CLIP = "The clip was copied to your clipboard"
 const THUMBNAIL_HEIGHT = 200
 const THUMBNAIL_WIDTH = 200
 const DEFAULT_IMAGE_SAVE_NAME = "myclip.png"
@@ -77,7 +76,8 @@ func Init(a fyne.App) {
 
 // LoadConfigFromFile reads the credentials from the config file and makes them the active config
 func LoadConfigFromFile() (Config, error) {
-	log.Println("Loading config file", CONFIG_FILEPATH)
+	log.Println("Loading config file")
+	debugf("Config file is %s", CONFIG_FILEPATH)
 	var c Config
 	if _, err := toml.DecodeFile(CONFIG_FILEPATH, &c); err != nil {
 		return c, err
@@ -86,14 +86,16 @@ func LoadConfigFromFile() (Config, error) {
 		return c, errors.New("config file is incomplete: " + CONFIG_FILEPATH)
 	}
 	setConf(c)
-	log.Println("Ok: loaded config for user", c.Username, "on", c.Server)
+	log.Println("Ok: loaded config")
+	debugf("Loaded config for user %s on %s", c.Username, c.Server)
 	return c, nil
 }
 
 // WriteConfigFile writes config struct to file. A temporary file is renamed over the
 // config, so that it is never left half written and always only readable by the user
 func WriteConfigFile(c Config) error {
-	log.Println("Writing config for user", c.Username, "on", c.Server)
+	log.Println("Writing config")
+	debugf("Writing config for user %s on %s", c.Username, c.Server)
 	if err := os.MkdirAll(filepath.Dir(CONFIG_FILEPATH), 0700); err != nil {
 		return err
 	}
@@ -126,7 +128,7 @@ func initConfigPaths() {
 		filepath.FromSlash("/etc/clipster"),
 	}
 	CONFIG_FILEPATH = findConfigFile(CONFIG_PATHS)
-	log.Println("Config file is", CONFIG_FILEPATH)
+	debugf("Config file is %s", CONFIG_FILEPATH)
 }
 
 // findConfigFile returns the path of the config file in the first folder of dirs that

@@ -44,8 +44,7 @@ func SetClipboard(clip Clips) {
 			ShowNotification("Clipster - Error", err.Error())
 			return
 		}
-		log.Println("Set Clipboard:", MSG_NOTIFY_GOT_IMAGE)
-		ShowNotification("Clipster – Got new clip", MSG_NOTIFY_GOT_IMAGE)
+		log.Println("Set Clipboard: image with size", len(clip.ImageBytes))
 	} else {
 		if _, err := clipboard.Write(ctx, clipboard.FmtText, []byte(clip.TextDecrypted)); err != nil {
 			log.Println("Error: set clipboard", err)
@@ -53,6 +52,7 @@ func SetClipboard(clip Clips) {
 			return
 		}
 		log.Println("Set Clipboard: text with length", len(clip.TextDecrypted))
-		ShowNotification("Clipster – Got new clip", clip.TextDecrypted)
+		debugf("Set Clipboard: %s", clip.TextDecrypted)
 	}
+	ShowNotification("Clipster – Got new clip", MSG_NOTIFY_GOT_CLIP)
 }

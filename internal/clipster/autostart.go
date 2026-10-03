@@ -43,7 +43,7 @@ func getAutostartDirAndFile() (string, string) {
 		log.Panicln("Error", err)
 		return "", ""
 	}
-	log.Println("Homedir is: ", homedir)
+	debugf("Homedir is %s", homedir)
 
 	if runtime.GOOS == "linux" {
 		path_dir := filepath.Join(homedir, ".config", "autostart")
@@ -63,10 +63,12 @@ func getAutostartDirAndFile() (string, string) {
 func isAutostartEnabled() (bool, string) {
 	_, file := getAutostartDirAndFile()
 	if fileExists(file) {
-		log.Println("Ok: Autostart file exists", file)
+		log.Println("Ok: Autostart file exists")
+		debugf("Autostart file is %s", file)
 		return true, file
 	} else {
-		log.Println("Warning: No Autostart file exists", file)
+		log.Println("Warning: No Autostart file exists")
+		debugf("Autostart file would be %s", file)
 		return false, ""
 	}
 }
@@ -80,15 +82,16 @@ func enableAutostartLinux() {
 	if err != nil {
 		log.Panicln("Error", err)
 	}
-	log.Println("Executable is: ", exec_path)
+	debugf("Executable is %s", exec_path)
 	entry := strings.Replace(LINUX_DESKTOP_ENTRY, "PLACEHOLDER", desktopEntryExec(exec_path), 1)
 
 	if fileExists(startup_dir) {
-		log.Println("Config file folder exists", startup_dir)
+		debugf("Autostart folder exists: %s", startup_dir)
 		if err := os.WriteFile(startup_file, []byte(entry), 0664); err != nil {
 			log.Println("Error: could not write autostart file", err)
 		} else {
-			log.Println("Ok: written autostart file", startup_file)
+			log.Println("Ok: written autostart file")
+			debugf("Written autostart file %s", startup_file)
 			ShowNotification("Clipster", "Added Clipster to autostart by creating "+
 				startup_file+"\nWhich points to "+exec_path)
 		}
@@ -108,7 +111,7 @@ func enableAutostartWin() {
 	if err != nil {
 		log.Panicln("Error", err)
 	}
-	log.Println("Executable is: ", exec_path)
+	debugf("Executable is %s", exec_path)
 	script := strings.Replace(WIN_CREATE_SHORTCUT, "PLACEHOLDER",
 		strings.ReplaceAll(exec_path, "'", "''"), 1)
 	_, stdErr, err := ps.execute(script)
@@ -126,11 +129,13 @@ func enableAutostartWin() {
 func disableAutostartFile() {
 	if ok, file := isAutostartEnabled(); ok {
 		if err := os.Remove(file); err != nil {
-			log.Println("Error: could not remove autostart file", file)
+			log.Println("Error: could not remove autostart file")
+			debugf("Could not remove autostart file %s", file)
 			ShowNotification("Clipster", "Could not remove autostart file "+
 				file+"\n"+err.Error())
 		} else {
-			log.Println("Ok: removed autostart file " + file)
+			log.Println("Ok: removed autostart file")
+			debugf("Removed autostart file %s", file)
 			ShowNotification("Clipster", "Removed autostart file "+file)
 		}
 	}

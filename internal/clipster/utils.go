@@ -12,7 +12,7 @@ import (
 	"image/png"
 	"log"
 	"net/http"
-	"regexp"
+	"net/url"
 	"strings"
 
 	_ "github.com/biessek/golang-ico"
@@ -23,8 +23,6 @@ import (
 
 	"clipster/assets"
 )
-
-var reHostname = regexp.MustCompile(RE_HOSTNAME)
 
 // BytesToImage reads bytes and returns image.Image. If bytes are not a valid Image
 // return a default "file not found" Image
@@ -111,9 +109,22 @@ func AreCredsComplete(host string, user string, pw string) (string, string, stri
 	return host, user, pw, err
 }
 
-// isHostnameValid checks hostname against some regex for basic validity
+// isHostnameValid checks that host is a usable server address. The credentials are sent
+// to it, so it must be https. Plain http is only accepted for the local machine.
+// Credentials in the address (https://user:pw@host) are refused, as they would end up in logs
 func isHostnameValid(host string) bool {
-	return reHostname.MatchString(host)
+	u, err := url.Parse(host)
+	if err != nil || u.Hostname() == "" || u.User != nil || u.RawQuery != "" ||
+		u.Fragment != "" || u.Opaque != "" || strings.Contains(host, "?") || strings.Contains(host, "#") {
+		return false
+	}
+	switch u.Scheme {
+	case "https":
+		return true
+	case "http":
+		return u.Hostname() == "localhost" || u.Hostname() == "127.0.0.1"
+	}
+	return false
 }
 
 // login_flow checks for completeness of creds, creates hash from them and
@@ -126,7 +137,8 @@ func login_flow(host string, user string, pw string, ssl_disable bool) (string, 
 		log.Println("Error:", err)
 		return "", err
 	}
-	log.Println("Login:", host, user, ssl_disable)
+	log.Println("Login: ssl check disabled:", ssl_disable)
+	debugf("Login: %s %s", host, user)
 
 	hash_login := GetLoginHashFromPw(user, pw)
 	if err := APILogin(host, user, hash_login, ssl_disable); err != nil {
@@ -147,7 +159,8 @@ func register_flow(host string, user string, pw string, ssl_disable bool) (strin
 		log.Println("Error:", err)
 		return "", err
 	}
-	log.Println("Registration:", host, user, ssl_disable)
+	log.Println("Registration: ssl check disabled:", ssl_disable)
+	debugf("Registration: %s %s", host, user)
 
 	hash_login := GetLoginHashFromPw(user, pw)
 	if err := APIRegister(host, user, hash_login, ssl_disable); err != nil {
@@ -232,11 +245,11 @@ func ShareClipFlow() {
 		log.Println("Error:", err)
 		return
 	}
-	if format == "txt" {
-		ShowNotification("Clipster – Shared clip", clip)
-	} else if format == "img" {
-		ShowNotification("Clipster – Shared clip", MSG_NOTIFY_GOT_IMAGE)
+	log.Println("Shared clip: format", format, "with length", len(clip))
+	if format == "txt" { // images are huge base64 strings
+		debugf("Shared clip: %s", clip)
 	}
+	ShowNotification("Clipster – Shared clip", MSG_NOTIFY_SHARED)
 }
 
 // processClipTextToImages decodes the image of a clip and adds its PNG bytes and the PNG

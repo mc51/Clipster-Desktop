@@ -289,7 +289,8 @@ func saveImage(w fyne.Window, clip Clips) {
 			showError(w, errors.New("Error saving file: "+path+"\n"+err.Error()))
 			return
 		}
-		log.Println("Saved file: " + path)
+		log.Println("Saved file")
+		debugf("Saved file: %s", path)
 		dialog.ShowInformation("Clipster - Info", "File saved: "+path, w)
 	}, w)
 	d.SetFileName(DEFAULT_IMAGE_SAVE_NAME)
