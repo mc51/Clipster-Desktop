@@ -2,91 +2,77 @@
 package main
 
 import (
-	_ "embed"
 	"log"
-	"runtime"
 
-	"clipster/clipster"
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/driver/desktop"
 
-	"github.com/getlantern/systray"
-	"github.com/gotk3/gotk3/gtk"
+	"clipster/assets"
+	"clipster/internal/clipster"
 )
 
-//go:embed assets/clipster.glade
-var GLADE_LAYOUT string
-
-// GTK (and Cocoa on MacOS) must run on the main OS thread
-func init() {
-	runtime.LockOSThread()
-}
+const appID = "cc.clipster.desktop"
 
 func main() {
-	clipster.GLADE_LAYOUT = GLADE_LAYOUT
-	clipster.Init()
+	a := app.NewWithID(appID)
+	a.SetIcon(assets.Icon)
+	clipster.Init(a)
 
-	gtk.Init(nil)
-	systray.Register(onReady, onExit)
-
-	if err := clipster.OpenConfigFile(); err != nil {
-		log.Println("Error:", err)
-		clipster.DoGUI(clipster.GUI_ConfigWindow)
-	} else if _, err := clipster.LoadConfigFromFile(); err != nil {
-		log.Println("Error:", err)
-		clipster.DoGUI(clipster.GUI_ConfigWindow)
+	desk, ok := a.(desktop.App)
+	if !ok {
+		log.Fatal("Error: system tray is not supported on this platform")
 	}
+	desk.SetSystemTrayIcon(assets.Tray)
+	desk.SetSystemTrayMenu(trayMenu(desk))
 
-	gtk.Main()
-}
-
-// onReady is called on systray startup. It displays tray menu and deals with selections
-func onReady() {
-	log.Println("On Ready")
-	systray.SetIcon(clipster.ICON_TRAY_BYTES)
-	systray.SetTitle("Clipster")
-	systray.SetTooltip("Clipster")
-
-	mLastClip := systray.AddMenuItem("Get last Clip", "Get last Clip")
-	mAllClips := systray.AddMenuItem("Get all Clips", "Get all Clips")
-	mShareClip := systray.AddMenuItem("Share Clip", "Share Clip")
-	systray.AddSeparator()
-	mEditCreds := systray.AddMenuItem("Edit Credentials", "Edit Credentials")
-	mAutostart := systray.AddMenuItemCheckbox("Autostart Clipster", "Autostart Clipster",
-		clipster.IsAutostartEnabled())
-	systray.AddSeparator()
-	mQuit := systray.AddMenuItem("Quit", "Quit the whole app")
-
-	// onReady already runs in its own goroutine, so we can block here
-	for {
-		select {
-		case <-mLastClip.ClickedCh:
-			log.Println("Get last Clip")
-			clipster.DownloadClipsFlow(true)
-		case <-mAllClips.ClickedCh:
-			log.Println("Get all Clips")
-			clipster.DownloadClipsFlow(false)
-		case <-mShareClip.ClickedCh:
-			log.Println("Share Clip")
-			clipster.ShareClipFlow()
-		case <-mEditCreds.ClickedCh:
-			log.Println("Edit Creds")
-			clipster.DoGUI(clipster.GUI_ConfigWindow)
-		case <-mAutostart.ClickedCh:
-			log.Println("Autostart")
-			clipster.ToggleAutostart()
-			if clipster.IsAutostartEnabled() {
-				mAutostart.Check()
-			} else {
-				mAutostart.Uncheck()
-			}
-		case <-mQuit.ClickedCh:
-			log.Println("Quit")
-			systray.Quit()
-			return
+	// Runs on the main goroutine once the event loop is up
+	a.Lifecycle().SetOnStarted(func() {
+		if err := clipster.OpenConfigFile(); err != nil {
+			log.Println("Error:", err)
+			clipster.GUI_ConfigWindow()
+		} else if _, err := clipster.LoadConfigFromFile(); err != nil {
+			log.Println("Error:", err)
+			clipster.GUI_ConfigWindow()
 		}
-	}
+	})
+
+	a.Run()
 }
 
-// onExit is called by systray when it shuts down
-func onExit() {
-	log.Println("On Exit")
+// trayMenu returns the tray menu. Menu actions run on the main goroutine, so everything
+// that takes time is started in a goroutine to keep the GUI responsive
+func trayMenu(desk desktop.App) *fyne.Menu {
+	return fyne.NewMenu("Clipster",
+		fyne.NewMenuItem("Get last Clip", func() {
+			log.Println("Get last Clip")
+			go clipster.DownloadClipsFlow(true)
+		}),
+		fyne.NewMenuItem("Get all Clips", func() {
+			log.Println("Get all Clips")
+			go clipster.DownloadClipsFlow(false)
+		}),
+		fyne.NewMenuItem("Share Clip", func() {
+			log.Println("Share Clip")
+			go clipster.ShareClipFlow()
+		}),
+		fyne.NewMenuItemSeparator(),
+		fyne.NewMenuItem("Edit Credentials", func() {
+			log.Println("Edit Creds")
+			clipster.GUI_ConfigWindow()
+		}),
+		// Fyne draws a check mark in front of the item as long as Checked is set
+		&fyne.MenuItem{
+			Label:   "Autostart Clipster",
+			Checked: clipster.IsAutostartEnabled(),
+			Action: func() {
+				log.Println("Autostart")
+				go func() {
+					clipster.ToggleAutostart()
+					// the tray menu can only be updated by setting a new one
+					fyne.Do(func() { desk.SetSystemTrayMenu(trayMenu(desk)) })
+				}()
+			},
+		},
+	)
 }

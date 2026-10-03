@@ -16,42 +16,48 @@ There is an alternative [Clipster-Desktop](https://github.com/mc51/Clipster-Desk
   
 ## Setup
 
-### Linux 
+### Linux
 
-Download [`clipster_linux.zip`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster_linux.zip) from the latest release, extract and start it.  
+Download [`clipster_linux.tar.xz`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster_linux.tar.xz) from the latest release and extract it. Then either run the binary `clipster/usr/local/bin/clipster` directly, or install it for your user with `make user-install` (or system wide with `sudo make install`) in the extracted `clipster/` folder.  
 To have Clipster auto start, right click on the systray menu and select `Autostart Clipster`.  
-  
-Clipster depends on gtk-3.0 and the Ayatana AppIndicator library. To install them on  
-Ubuntu/Debian (>= 22.04 / 12):  
-`sudo apt-get install libgtk-3-0 libayatana-appindicator3-1`  
 
-Fedora/RHEL:  
-`sudo dnf install gtk3 libayatana-appindicator-gtk3`
+Clipster only needs OpenGL and X11 or Wayland, which every desktop has. Most distributions have them installed already. If not, on  
+Ubuntu/Debian: `sudo apt-get install libgl1 libx11-6 libwayland-client0`  
+Fedora/RHEL: `sudo dnf install mesa-libGL libX11 libwayland-client`  
+
+The systray needs StatusNotifier support. On GNOME install the [AppIndicator extension](https://extensions.gnome.org/extension/615/appindicator-support/).
 
 ### Windows (>= 10)  
 
-Download [`clipster_win.zip`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster_win.zip) from the latest release and extract it. Run `clipster_win.exe` in the `clipster/bin/` folder.  
+Download [`clipster_win.exe`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster_win.exe) from the latest release and run it. It is a single file without any dependencies.  
 To have Clipster auto start, right click on the systray menu and select `Autostart Clipster`.  
-The `.zip` file comes with GTK-3 files that the GUI depends on. Keep the folder structure under `clipster/` so that the files can be found.  
 
 ### MacOS (>= 12 Monterey)  
 
-Download [`clipster_mac.zip`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster_mac.zip) (Apple Silicon) or [`clipster_mac_intel.zip`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster_mac_intel.zip) (Intel) from the latest release, extract, move it to `Applications` and start it via `right-click -> open`. You might get a warning message, that you need to ignore. If that fails:
+Download [`clipster_mac.zip`](https://github.com/mc51/Clipster-Desktop/releases/latest/download/clipster_mac.zip) from the latest release (works on Apple Silicon and Intel), extract, move it to `Applications` and start it via `right-click -> open`. You might get a warning message, that you need to ignore. If that fails:
 Go to `System Preferences --> Security & Privacy`. In the `General` Tab the App will be listed and you can start it from there.  
   
 To have Clipster auto start, right click on the icon in your dock and select `Options --> Open at Login`.  
 
 ### Build from source
 
-You need Go (see `go.mod` for the version), a C compiler and the GTK 3 development files. On Ubuntu/Debian:
+You need Go (see `go.mod` for the version) and a C compiler. On Linux you also need the OpenGL and X11/Wayland development files. On Ubuntu/Debian:
 
 ```bash
-sudo apt-get install gcc libgtk-3-dev libayatana-appindicator3-dev
-go build -o clipster .
+sudo apt-get install gcc libgl1-mesa-dev xorg-dev libwayland-dev libxkbcommon-dev
+go build -o build/clipster .
 go test ./...
 ```
 
-For MacOS and Windows see the [build workflow](.github/workflows/build.yml).
+The release packages are created with the [`fyne` tool](https://docs.fyne.io/started/packaging), which is pinned in `go.mod`:
+
+```bash
+go tool fyne package --os linux --release     # Clipster.tar.xz
+go tool fyne package --os windows --release   # Clipster.exe, can be cross compiled with MinGW
+go tool fyne package --os darwin --release    # Clipster.app
+```
+
+See the [build workflow](.github/workflows/build.yml) for details.
 
 ## Usage
 

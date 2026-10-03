@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"reflect"
 
-	"github.com/gen2brain/beeep"
+	"fyne.io/fyne/v2"
 	"github.com/spf13/viper"
 	"golang.design/x/clipboard"
 )
@@ -45,15 +45,12 @@ type Config struct {
 	Disable_ssl_cert_check bool
 }
 
-var (
-	conf            Config
-	GLADE_LAYOUT    string
-	ICON_PNG_PIXBUF = BytesToPixbuf(ICON_PNG_BYTES)
-)
+var conf Config
 
-// Init prepares the config paths and the clipboard. Must be called once on startup
-func Init() {
-	beeep.AppName = "Clipster"
+// Init prepares the config paths and the clipboard. It remembers the Fyne app, which is
+// needed for notifications and windows. Must be called once on startup
+func Init(a fyne.App) {
+	fyneApp = a
 	initConfigPaths()
 	if err := clipboard.Init(); err != nil {
 		log.Println("Error: clipboard not available", err)

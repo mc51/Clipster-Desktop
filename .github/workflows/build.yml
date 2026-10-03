@@ -14,28 +14,12 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
 
+# All packaging is done by the fyne tool, which is pinned in go.mod (`tool` directive)
 jobs:
-  build:
-    name: Build ${{ matrix.target }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          # oldest supported Ubuntu for broad glibc compatibility of the binary
-          - os: ubuntu-22.04
-            target: linux
-            out_file: clipster_linux.zip
-          - os: macos-15
-            target: macos-arm64
-            out_file: clipster_mac.zip
-          - os: macos-15-intel
-            target: macos-intel
-            out_file: clipster_mac_intel.zip
-          - os: windows-2025
-            target: windows
-            out_file: clipster_win.zip
-
+  linux-windows:
+    name: Build Linux and Windows
+    # oldest supported Ubuntu for broad glibc compatibility of the Linux binary
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout repo
         uses: actions/checkout@v7
@@ -45,141 +29,120 @@ jobs:
         with:
           go-version-file: go.mod
 
-      # Linux
-      - name: Install dependencies (Linux)
-        if: runner.os == 'Linux'
+      - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get -y install libgtk-3-dev libayatana-appindicator3-dev
+          sudo apt-get -y install gcc libgl1-mesa-dev xorg-dev libwayland-dev libxkbcommon-dev \
+            gcc-mingw-w64-x86-64
 
-      - name: Vet and test (Linux)
-        if: runner.os == 'Linux'
+      - name: Vet and test
         run: |
           go vet ./...
           go test ./...
 
-      - name: Build (Linux)
-        if: runner.os == 'Linux'
+      - name: Get version
+        id: version
         run: |
-          go build -trimpath -o build/clipster_linux -ldflags "-s -w" .
-          cd build && zip -r9 ${{ matrix.out_file }} clipster_linux
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=$(sed -n 's/^ *Version = "\(.*\)"/\1/p' FyneApp.toml)" >> "$GITHUB_OUTPUT"
+          fi
 
-      # MacOS
-      - name: Install conda (MacOS)
-        if: runner.os == 'macOS'
-        uses: conda-incubator/setup-miniconda@v4
-        with:
-          miniforge-version: latest
-          auto-activate: true
-          activate-environment: ""
-
-      - name: Install dependencies (MacOS)
-        if: runner.os == 'macOS'
-        shell: bash -el {0}
-        # conda-forge ships some pkg-config files separately from the libraries:
-        # zlib (zlib.pc for gio-2.0) and expat (expat.pc for fontconfig)
+      - name: Package (Linux)
         run: |
-          conda install -y -q -c conda-forge gtk3 glib zlib expat pkg-config
-          PKG_CONFIG_PATH="$CONDA/lib/pkgconfig" "$CONDA/bin/pkg-config" --cflags --libs \
-            gtk+-3.0 gdk-3.0 gio-2.0 glib-2.0 gobject-2.0 gmodule-2.0 \
-            cairo cairo-gobject pango pangocairo fontconfig gdk-pixbuf-2.0 > /dev/null
-
-      - name: Build (MacOS)
-        if: runner.os == 'macOS'
-        shell: bash -el {0}
-        run: |
-          export PKG_CONFIG="$CONDA/bin/pkg-config"
-          export PKG_CONFIG_PATH="$CONDA/lib/pkgconfig"
-          go build -trimpath -o build/clipster_mac -ldflags "-s -w" .
-
-      - name: Create app bundle (MacOS)
-        if: runner.os == 'macOS'
-        shell: bash -el {0}
-        run: |
-          git clone --depth 1 https://github.com/mc51/gtk-mac-bundler
-          (cd gtk-mac-bundler && make install)
-          export PKG_CONFIG_PATH="$CONDA/lib/pkgconfig"
-          ~/.local/bin/gtk-mac-bundler ./build/bundle/clipster.bundle
-          # the bundler's install_name_tool calls invalidate code signatures and
-          # Apple Silicon refuses to load unsigned code, so ad-hoc sign everything again
-          APP=build/clipster_mac.app
-          find "$APP" -type f \( -name '*.dylib' -o -name '*.so' \) -exec codesign --force --sign - {} +
-          codesign --force --sign - "$APP"/Contents/MacOS/*-bin
-          codesign --force --sign - "$APP"
-          codesign --verify --verbose "$APP"/Contents/MacOS/*-bin
-          # ditto keeps the extended attributes holding signatures, unlike zip
-          cd build && ditto -c -k --keepParent clipster_mac.app ${{ matrix.out_file }}
-
-      # Windows
-      - name: Install MINGW64 (Windows)
-        if: runner.os == 'Windows'
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: MINGW64
-          path-type: inherit
-          install: >-
-            mingw-w64-x86_64-pkg-config
-            mingw-w64-x86_64-gtk3
-            mingw-w64-x86_64-gcc
-            glib2-devel
-            base-devel
-            zip
-
-      - name: Build (Windows)
-        if: runner.os == 'Windows'
-        shell: msys2 {0}
-        env:
-          CGO_ENABLED: '1'
-        run: |
-          go run github.com/akavel/rsrc@v0.10.2 -ico assets/clipster_icon_64.ico -o rsrc_windows_amd64.syso
-          sed -i -e 's/-Wl,-luuid/-luuid/g' /mingw64/lib/pkgconfig/gdk-3.0.pc
-          go build -trimpath -o build/bin/clipster_win.exe -ldflags "-H=windowsgui -s -w" .
+          go tool fyne package --os linux --release \
+            --app-version "${{ steps.version.outputs.version }}" --app-build "${{ github.run_number }}"
+          mkdir -p dist
+          mv Clipster.tar.xz dist/clipster_linux.tar.xz
 
       - name: Package (Windows)
-        if: runner.os == 'Windows'
-        shell: msys2 {0}
+        env:
+          CC: x86_64-w64-mingw32-gcc
+          GOARCH: amd64
+          # do not depend on the MinGW runtime DLLs, the exe must be a single file
+          GOFLAGS: -ldflags=-extldflags=-static
         run: |
-          LOADERS=lib/gdk-pixbuf-2.0/2.10.0/loaders
-          mkdir -p build/clipster build/$LOADERS build/share/glib-2.0/schemas/ \
-            build/share/icons/hicolor/ build/share/icons/Adwaita/
+          # Build the fyne tool for this machine first. CC and GOARCH above are meant for the
+          # Windows target and would break building the tool itself
+          FYNE=$(env -u CC -u GOARCH -u GOFLAGS go tool -n fyne)
+          "$FYNE" package --os windows --release \
+            --app-version "${{ steps.version.outputs.version }}" --app-build "${{ github.run_number }}"
+          mv Clipster.exe dist/clipster_win.exe
+          echo "Imported DLLs:"
+          x86_64-w64-mingw32-objdump -p dist/clipster_win.exe | sed -n 's/^\s*DLL Name: //p' | sort -u
+          if x86_64-w64-mingw32-objdump -p dist/clipster_win.exe | grep -iE 'DLL Name: (libgcc|libwinpthread|libstdc)'; then
+            echo "::error::exe depends on MinGW runtime DLLs"
+            exit 1
+          fi
 
-          # GTK only ever decodes PNG (icons and thumbnails), so ship just that pixbuf loader
-          cp /mingw64/$LOADERS/libpixbufloader-png.dll build/$LOADERS/
-          awk -v RS= -v ORS='\n\n' '/libpixbufloader-png\.dll/' \
-            /mingw64/$LOADERS/../loaders.cache > build/$LOADERS/../loaders.cache
-
-          # copy only the DLLs reachable from the import tables of the exe and the loader
-          declare -A seen
-          queue=(build/bin/clipster_win.exe build/$LOADERS/libpixbufloader-png.dll)
-          while [ ${#queue[@]} -gt 0 ]; do
-            for dll in $(objdump -p "${queue[0]}" | sed -n 's/^\s*DLL Name: //p'); do
-              if [ -z "${seen[$dll]}" ] && [ -f "/mingw64/bin/$dll" ]; then
-                seen[$dll]=1
-                cp "/mingw64/bin/$dll" build/bin/
-                queue+=("/mingw64/bin/$dll")
-              fi
-            done
-            queue=("${queue[@]:1}")
-          done
-          echo "Bundled ${#seen[@]} DLLs: ${!seen[*]}"
-
-          cp /mingw64/share/glib-2.0/schemas/gschemas.compiled build/share/glib-2.0/schemas/
-          cp /mingw64/share/icons/hicolor/index.theme build/share/icons/hicolor/
-          cp /mingw64/share/icons/Adwaita/* build/share/icons/Adwaita/ || :
-          cp -r /mingw64/share/icons/Adwaita/16x16/ build/share/icons/Adwaita/ || :
-          cd build && mv bin lib share clipster/
-          zip -r9 ${{ matrix.out_file }} clipster/
+      - name: Show artifact sizes
+        run: ls -l dist
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ matrix.target }}
-          path: build/${{ matrix.out_file }}
+          name: linux-windows
+          path: dist/*
+          if-no-files-found: error
+
+  macos:
+    name: Build macOS
+    runs-on: macos-15
+    env:
+      MACOSX_DEPLOYMENT_TARGET: '12.0'
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v7
+
+      - name: Install Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+
+      - name: Get version
+        id: version
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=$(sed -n 's/^ *Version = "\(.*\)"/\1/p' FyneApp.toml)" >> "$GITHUB_OUTPUT"
+          fi
+
+      # One universal binary (Apple Silicon and Intel) instead of one download per architecture.
+      # The name of the binary ends up in the app bundle
+      - name: Build universal binary
+        run: |
+          mkdir -p build/arm64 build/amd64 build/universal
+          for arch in arm64 amd64; do
+            CGO_ENABLED=1 GOARCH=$arch go build -trimpath -tags release -ldflags "-s -w" \
+              -o build/$arch/clipster .
+          done
+          lipo -create -output build/universal/clipster build/arm64/clipster build/amd64/clipster
+          lipo -info build/universal/clipster
+
+      - name: Create app bundle
+        run: |
+          go tool fyne package --os darwin --release --executable build/universal/clipster \
+            --app-version "${{ steps.version.outputs.version }}" --app-build "${{ github.run_number }}"
+          # Apple Silicon refuses to run unsigned code, so ad-hoc sign the bundle
+          codesign --force --deep --sign - Clipster.app
+          codesign --verify --verbose Clipster.app
+          mkdir -p dist
+          # ditto keeps the extended attributes holding signatures, unlike zip
+          ditto -c -k --keepParent Clipster.app dist/clipster_mac.zip
+          ls -l dist
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: macos
+          path: dist/clipster_mac.zip
           if-no-files-found: error
 
   release:
     name: Create Release
-    needs: build
+    needs: [linux-windows, macos]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
@@ -195,4 +158,4 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           name: Release ${{ github.ref_name }}
-          files: dist/*.zip
+          files: dist/*
