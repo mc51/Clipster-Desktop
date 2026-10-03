@@ -71,5 +71,14 @@ func trayMenu(desk desktop.App) *fyne.Menu {
 				}()
 			},
 		},
+		fyne.NewMenuItemSeparator(),
+		&fyne.MenuItem{
+			Label:  "Quit",
+			IsQuit: true,
+			Action: func() {
+				log.Println("Quit")
+				fyne.CurrentApp().Quit()
+			},
+		},
 	)
 }
