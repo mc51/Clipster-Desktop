@@ -200,5 +200,11 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           name: Release ${{ github.ref_name }}
+          # SignPath Foundation requires the release page to name the code signing policy
+          body: |
+            Download the zip for your system: `clipster_linux.zip`, `clipster_win.zip` or `clipster_mac.zip`. See the [README](https://github.com/mc51/Clipster-Desktop#setup) for setup instructions.
+
+            [Code signing policy](https://github.com/mc51/Clipster-Desktop#code-signing-policy) · [Privacy policy](https://github.com/mc51/Clipster-Desktop/blob/main/PRIVACY.md)
+          generate_release_notes: true
           files: dist/clipster_*.zip
           fail_on_unmatched_files: true
