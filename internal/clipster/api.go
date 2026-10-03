@@ -80,8 +80,9 @@ func APIShareClip(clip string, format string) error {
 		"device": "desktop",
 		"format": format,
 	}
-	_, err := apiRequest(http.MethodPost, conf.Server+API_URI_COPY_PASTE, payload,
-		conf.Username, conf.Hash_login, conf.Disable_ssl_cert_check)
+	c := getConf()
+	_, err := apiRequest(http.MethodPost, c.Server+API_URI_COPY_PASTE, payload,
+		c.Username, c.Hash_login, c.Disable_ssl_cert_check)
 	if err != nil {
 		log.Println("Error: sharing clip failed", err)
 		return errors.New("sharing clip failed: " + err.Error())
@@ -93,8 +94,9 @@ func APIShareClip(clip string, format string) error {
 // APIDownloadAllClips retrieves all encrypted Clips from server and returns them as Clips struct
 func APIDownloadAllClips() ([]Clips, error) {
 	var clips []Clips
-	body, err := apiRequest(http.MethodGet, conf.Server+API_URI_COPY_PASTE, nil,
-		conf.Username, conf.Hash_login, conf.Disable_ssl_cert_check)
+	c := getConf()
+	body, err := apiRequest(http.MethodGet, c.Server+API_URI_COPY_PASTE, nil,
+		c.Username, c.Hash_login, c.Disable_ssl_cert_check)
 	if err != nil {
 		log.Println("Error: download Clips", err)
 		return nil, errors.New("download Clips failed: " + err.Error())

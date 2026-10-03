@@ -161,8 +161,8 @@ func register_flow(host string, user string, pw string, ssl_disable bool) (strin
 // saveCredentials makes c the active config and writes it to disk.
 // Returns the message to display to the user
 func saveCredentials(c Config, msg string) (string, error) {
-	conf = c
-	if err := WriteConfigFile(conf); err != nil {
+	setConf(c)
+	if err := WriteConfigFile(c); err != nil {
 		return "", fmt.Errorf("%s\nBut credentials could not be saved to config:\n%s\n%w",
 			msg, CONFIG_FILEPATH, err)
 	}

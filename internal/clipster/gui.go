@@ -25,7 +25,8 @@ const (
 	textRowMaxHeight   float32 = 300
 	imageRowHeight     float32 = THUMBNAIL_HEIGHT + 20
 	textRowCharsPerRow         = 80
-	textRowLineHeight  float32 = 24
+	// more than ever fits into a row of textRowMaxHeight, keeps wrapping huge clips cheap
+	textPreviewMaxRunes = 5000
 )
 
 var (
@@ -33,6 +34,11 @@ var (
 	fyneApp fyne.App
 	// configWin is the currently open config window or nil. Only touch it on the main goroutine
 	configWin fyne.Window
+
+	// The config window talks to the server via these. Tests replace them
+	loginFlow       = login_flow
+	registerFlow    = register_flow
+	runInBackground = func(f func()) { go f() }
 )
 
 // sanitizeNotification makes text safe to hand to Fyne's notifications.
@@ -87,16 +93,17 @@ func GUI_ConfigWindow() {
 	w.SetIcon(assets.Icon)
 
 	// Pre-fill form with current config
+	c := getConf()
 	server := widget.NewEntry()
 	server.SetPlaceHolder(HOST_DEFAULT)
-	if conf.Server != HOST_DEFAULT {
-		server.SetText(conf.Server)
+	if c.Server != HOST_DEFAULT {
+		server.SetText(c.Server)
 	}
 	user := widget.NewEntry()
-	user.SetText(conf.Username)
+	user.SetText(c.Username)
 	password := widget.NewPasswordEntry()
 	noSSLCheck := widget.NewCheck("", nil)
-	noSSLCheck.SetChecked(conf.Disable_ssl_cert_check)
+	noSSLCheck.SetChecked(c.Disable_ssl_cert_check)
 
 	form := widget.NewForm(
 		widget.NewFormItem("Server address:", server),
@@ -111,9 +118,17 @@ func GUI_ConfigWindow() {
 		host, name, pw, noSSL := server.Text, user.Text, password.Text, noSSLCheck.Checked
 		loginBtn.Disable()
 		registerBtn.Disable()
-		go func() {
+		runInBackground(func() {
 			msg, err := flow(host, name, pw, noSSL)
 			fyne.Do(func() {
+				if configWin != w { // closed while the request was running, so there is no window for a dialog
+					if err != nil {
+						ShowNotification("Clipster - Error", err.Error())
+					} else {
+						ShowNotification("Clipster", msg)
+					}
+					return
+				}
 				loginBtn.Enable()
 				registerBtn.Enable()
 				if err != nil {
@@ -124,10 +139,10 @@ func GUI_ConfigWindow() {
 				d.SetOnClosed(w.Close)
 				d.Show()
 			})
-		}()
+		})
 	}
-	loginBtn = widget.NewButton("Login", func() { run(login_flow) })
-	registerBtn = widget.NewButton("Register", func() { run(register_flow) })
+	loginBtn = widget.NewButton("Login", func() { run(loginFlow) })
+	registerBtn = widget.NewButton("Register", func() { run(registerFlow) })
 	cancelBtn := widget.NewButton("Cancel", w.Close)
 
 	w.SetContent(container.NewPadded(container.NewVBox(
@@ -145,10 +160,12 @@ func GUI_AllClips(clips []Clips) {
 	w := fyneApp.NewWindow("Clipster - Your Clips")
 	w.SetIcon(assets.Icon)
 
-	// Prepare the images up front, so that updating a row stays cheap
+	// Prepare images and texts up front, so that updating a row stays cheap
 	thumbs := make([]fyne.Resource, len(clips))
+	texts := make([]string, len(clips))
 	for i, clip := range clips {
 		if clip.Format != "img" {
+			texts[i] = textPreview(clip.TextDecrypted)
 			continue
 		}
 		thumb := clip.ThumbBytes
@@ -164,6 +181,8 @@ func GUI_AllClips(clips []Clips) {
 		func() fyne.CanvasObject {
 			label := widget.NewLabel("")
 			label.Wrapping = fyne.TextWrapWord
+			// rows have a fixed height and do not clip, so text must not grow beyond it
+			label.Truncation = fyne.TextTruncateEllipsis
 			img := canvas.NewImageFromResource(nil)
 			img.FillMode = canvas.ImageFillContain
 			return container.NewStack(label, img)
@@ -179,15 +198,15 @@ func GUI_AllClips(clips []Clips) {
 				return
 			}
 			img.Hide()
-			label.SetText(clips[id].TextDecrypted)
+			label.SetText(texts[id])
 			label.Show()
 		},
 	)
-	for i, clip := range clips {
+	for i := range clips {
 		if thumbs[i] != nil {
 			list.SetItemHeight(i, imageRowHeight)
 		} else {
-			list.SetItemHeight(i, textRowHeight(clip.TextDecrypted))
+			list.SetItemHeight(i, textRowHeight(texts[i]))
 		}
 	}
 	list.OnSelected = func(id widget.ListItemID) { selected = id }
@@ -222,13 +241,29 @@ func GUI_AllClips(clips []Clips) {
 	w.Show()
 }
 
-// textRowHeight estimates how much room the text of a clip needs when displayed wrapped
+// textPreview shortens the text of a clip for displaying it in a row of the clips list.
+// When truncating wrapped text to the row height, Fyne does not count empty lines.
+// They are replaced by a space, otherwise many of them would still overflow the row
+func textPreview(text string) string {
+	lines := strings.Split(strings.ReplaceAll(truncate(text, textPreviewMaxRunes), "\r\n", "\n"), "\n")
+	for i, line := range lines {
+		if line == "" {
+			lines[i] = " "
+		}
+	}
+	return strings.Join(lines, "\n")
+}
+
+// textRowHeight estimates how much room text needs when displayed wrapped in a label.
+// Must be called after the Fyne app has been created, as it measures text using the theme
 func textRowHeight(text string) float32 {
 	lines := 0
 	for _, line := range strings.Split(text, "\n") {
 		lines += max(1, int(math.Ceil(float64(len([]rune(line)))/textRowCharsPerRow)))
 	}
-	h := float32(lines)*textRowLineHeight + 16
+	oneLine := widget.NewLabel("x").MinSize().Height
+	perLine := widget.NewLabel("x\nx").MinSize().Height - oneLine
+	h := oneLine + float32(lines-1)*perLine
 	return min(max(h, textRowMinHeight), textRowMaxHeight)
 }
 

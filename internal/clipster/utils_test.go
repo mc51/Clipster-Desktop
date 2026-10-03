@@ -2,7 +2,11 @@ package clipster
 
 import (
 	"image"
+	"os"
+	"path/filepath"
+	"runtime"
 	"strings"
+	"sync"
 	"testing"
 )
 
@@ -17,8 +21,8 @@ func TestDeriveKey(t *testing.T) {
 }
 
 func TestEncryptDecrypt(t *testing.T) {
-	conf = Config{Hash_msg: GetMsgHashFromPw("alice", "secret")}
-	t.Cleanup(func() { conf = Config{} })
+	setConf(Config{Hash_msg: GetMsgHashFromPw("alice", "secret")})
+	t.Cleanup(func() { setConf(Config{}) })
 
 	tok, err := Encrypt("hello clipster")
 	if err != nil {
@@ -32,13 +36,48 @@ func TestEncryptDecrypt(t *testing.T) {
 		t.Errorf("Decrypt = %q", msg)
 	}
 
-	conf.Hash_msg = GetMsgHashFromPw("alice", "other")
+	setConf(Config{Hash_msg: GetMsgHashFromPw("alice", "other")})
 	if _, err := Decrypt(tok); err == nil {
 		t.Error("Decrypt with wrong key should fail")
 	}
-	conf.Hash_msg = ""
+	setConf(Config{})
 	if _, err := Encrypt("x"); err == nil {
 		t.Error("Encrypt without key should fail")
+	}
+}
+
+// Credentials are saved by the config window in the background, while flows started from
+// the tray read them. Run with -race
+func TestSaveCredentials(t *testing.T) {
+	oldPath := CONFIG_FILEPATH
+	CONFIG_FILEPATH = filepath.Join(t.TempDir(), CONFIG_FILENAME)
+	t.Cleanup(func() {
+		CONFIG_FILEPATH = oldPath
+		setConf(Config{})
+	})
+
+	c := Config{"https://example.com", "alice", GetLoginHashFromPw("alice", "secret"),
+		GetMsgHashFromPw("alice", "secret"), false}
+	var wg sync.WaitGroup
+	for range 4 {
+		wg.Go(func() {
+			if _, err := saveCredentials(c, "Login successful"); err != nil {
+				t.Error(err)
+			}
+		})
+		wg.Go(func() { _, _ = Encrypt("hello") })
+	}
+	wg.Wait()
+
+	if getConf() != c {
+		t.Errorf("active config = %+v, want %+v", getConf(), c)
+	}
+	info, err := os.Stat(CONFIG_FILEPATH)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if runtime.GOOS != "windows" && info.Mode().Perm() != 0600 {
+		t.Errorf("config file permissions = %v, want 0600", info.Mode().Perm())
 	}
 }
 

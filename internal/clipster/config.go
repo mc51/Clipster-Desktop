@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"sync"
 
 	"fyne.io/fyne/v2"
 	"github.com/spf13/viper"
@@ -45,7 +46,27 @@ type Config struct {
 	Disable_ssl_cert_check bool
 }
 
-var conf Config
+var (
+	// conf is read by flows running in the background, so only access it via getConf and setConf
+	conf   Config
+	confMu sync.RWMutex
+	// viper is not safe for concurrent use, serialize writing the config file
+	writeConfigMu sync.Mutex
+)
+
+// getConf returns a copy of the active config
+func getConf() Config {
+	confMu.RLock()
+	defer confMu.RUnlock()
+	return conf
+}
+
+// setConf makes c the active config
+func setConf(c Config) {
+	confMu.Lock()
+	defer confMu.Unlock()
+	conf = c
+}
 
 // Init prepares the config paths and the clipboard. It remembers the Fyne app, which is
 // needed for notifications and windows. Must be called once on startup
@@ -75,16 +96,20 @@ func OpenConfigFile() error {
 // LoadConfigFromFile loads the credentials from the already opened config file
 func LoadConfigFromFile() (Config, error) {
 	log.Println("Loading config file to struct")
-	if err := viper.Unmarshal(&conf); err != nil {
+	var c Config
+	if err := viper.Unmarshal(&c); err != nil {
 		log.Println("Error: Could not decode config into struct")
-		return conf, err
+		return c, err
 	}
-	log.Println("Ok: loaded config into struct for user", conf.Username, "on", conf.Server)
-	return conf, nil
+	setConf(c)
+	log.Println("Ok: loaded config into struct for user", c.Username, "on", c.Server)
+	return c, nil
 }
 
 // WriteConfigFile writes config struct to file
 func WriteConfigFile(c Config) error {
+	writeConfigMu.Lock()
+	defer writeConfigMu.Unlock()
 	log.Println("Writing config for user", c.Username, "on", c.Server)
 	v := reflect.ValueOf(c)
 	typeOfS := v.Type()
