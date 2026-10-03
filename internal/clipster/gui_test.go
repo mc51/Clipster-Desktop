@@ -287,6 +287,33 @@ func TestAllClipsWindow(t *testing.T) {
 	}
 }
 
+func TestAllClipsWindowSaveImage(t *testing.T) {
+	newTestApp(t)
+	thumb, err := ImageToBytes(image.NewRGBA(image.Rect(0, 0, 40, 20)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	GUI_AllClips([]Clips{
+		{Format: "txt", TextDecrypted: "hello"},
+		{Format: "img", ThumbBytes: thumb, ImageBytes: thumb},
+	})
+	w := windowsWithTitle("Clipster - Your Clips")[0]
+	var list *widget.List
+	walk(w.Content(), func(o fyne.CanvasObject) bool {
+		list, _ = o.(*widget.List)
+		return list == nil
+	})
+	if list == nil {
+		t.Fatal("clips window has no list")
+	}
+
+	list.Select(1)
+	test.Tap(findButton(w.Content(), "Save as"))
+	if w.Canvas().Overlays().Top() == nil {
+		t.Error("save as on an image should show a file dialog")
+	}
+}
+
 // Rows of the clips list do not clip their content, so long texts must be cut to the row
 func TestAllClipsWindowLongTextStaysInRow(t *testing.T) {
 	texts := map[string]string{

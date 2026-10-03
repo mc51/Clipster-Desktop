@@ -293,6 +293,7 @@ func saveImage(w fyne.Window, clip Clips) {
 		dialog.ShowInformation("Clipster - Info", "File saved: "+path, w)
 	}, w)
 	d.SetFileName(DEFAULT_IMAGE_SAVE_NAME)
-	d.Resize(w.Canvas().Size())
+	// Fyne only creates the dialog in Show, resizing it before panics
 	d.Show()
+	d.Resize(w.Canvas().Size())
 }
