@@ -89,22 +89,6 @@ For a server with a self-signed certificate, Clipster shows its fingerprint on l
 
 Clips are encrypted on your device before they are sent, the server only stores encrypted data. Your password never leaves the device. See [PRIVACY.md](PRIVACY.md) for the data the server sees.
 
-## Code signing policy
-
-Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by [SignPath Foundation](https://signpath.org).  
-This applies to the Windows release `clipster_win.exe`. Signing is being set up, releases up to v0.7.0 are not signed yet.
-
-All release files are built by the [build workflow](.github/workflows/build.yml) from this repository. Every release must be approved manually before it is signed.
-
-Team roles:
-
-- Committers and reviewers: [MC51](https://github.com/mc51)
-- Approvers: [MC51](https://github.com/mc51)
-
-Changes by anyone else are only merged after review by a committer.
-
-Privacy policy: This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it. See [PRIVACY.md](PRIVACY.md) for what is sent to the Clipster server when you do.
-
 ## Contributions
 
 Contributions are very welcome. If you come across a bug, please open an issue. The same goes for feature requests.
