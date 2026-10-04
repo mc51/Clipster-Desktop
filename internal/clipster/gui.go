@@ -42,7 +42,7 @@ var (
 	runInBackground          = func(f func()) { go f() }
 )
 
-// flowFunc is a login or registration. pin is the fingerprint of the certificate to trust
+// flowFunc is a login or registration
 type flowFunc func(host, user, pw, pin string) (string, error)
 
 // sanitizeNotification makes text safe to hand to Fyne's notifications.
@@ -83,7 +83,7 @@ func showError(w fyne.Window, err error) {
 	dialog.ShowError(err, w)
 }
 
-// fingerprintLines puts a fingerprint on two lines, so that it fits into a dialog
+// fingerprintLines splits a fingerprint onto two lines
 func fingerprintLines(fp string) string {
 	parts := strings.Split(fp, ":")
 	if len(parts) < 2 {
@@ -93,8 +93,7 @@ func fingerprintLines(fp string) string {
 	return strings.Join(parts[:half], ":") + "\n" + strings.Join(parts[half:], ":")
 }
 
-// wrapLines breaks the paragraphs of text into lines of at most width characters
-// (longer words stay as they are). Dialogs can not wrap text reliably, as they are as high as the window
+// wrapLines wraps text at width characters. Labels in dialogs wrap unreliably
 func wrapLines(text string, width int) string {
 	var lines []string
 	for _, para := range strings.Split(text, "\n") {
@@ -114,7 +113,7 @@ func wrapLines(text string, width int) string {
 	return strings.Join(lines, "\n")
 }
 
-// confirmCert asks the user whether to trust the certificate of certErr. trust is called if they do.
+// confirmCert asks whether to trust the certificate and calls trust if so.
 // Must be called on the main goroutine
 func confirmCert(w fyne.Window, certErr *UntrustedCertError, trust func()) {
 	const lineWidth = 56
@@ -149,7 +148,7 @@ func confirmCert(w fyne.Window, certErr *UntrustedCertError, trust func()) {
 		}
 	}, w)
 	d.Show()
-	// A dialog can not be larger than its window, which is small. Make room for all of it
+	// a dialog can not exceed its window, so grow the window
 	need := d.MinSize().AddWidthHeight(40, 40)
 	cur := w.Canvas().Size()
 	w.Resize(fyne.NewSize(max(cur.Width, need.Width), max(cur.Height, need.Height)))
@@ -187,9 +186,7 @@ func GUI_ConfigWindow() {
 	)
 
 	var loginBtn, registerBtn *widget.Button
-	// start executes flow in the background so that the GUI does not block on the network.
-	// pin is the fingerprint of the certificate to trust. If the server presents another
-	// certificate that can not be verified, the user is asked whether to trust it and flow is started again
+	// start runs flow in the background. For an untrusted certificate it asks and reruns with that pin
 	var start func(flow flowFunc, host, name, pw, pin string)
 	start = func(flow flowFunc, host, name, pw, pin string) {
 		loginBtn.Disable()
@@ -222,8 +219,7 @@ func GUI_ConfigWindow() {
 			})
 		})
 	}
-	// run starts flow with the certificate trusted so far. It only applies to the
-	// server it was trusted for, so it is dropped when the address was changed
+	// run uses the saved pin only if the server address is unchanged
 	run := func(flow flowFunc) {
 		pin := ""
 		if cur := getConf(); normalizeHost(server.Text) == cur.Server {

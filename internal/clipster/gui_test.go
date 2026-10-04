@@ -200,7 +200,7 @@ func TestConfigWindowLogin(t *testing.T) {
 	}
 }
 
-// findServerEntry returns the entry for the server address somewhere below obj
+// findServerEntry returns the server address entry below obj
 func findServerEntry(obj fyne.CanvasObject) *widget.Entry {
 	var found *widget.Entry
 	walk(obj, func(o fyne.CanvasObject) bool {
@@ -214,7 +214,7 @@ func findServerEntry(obj fyne.CanvasObject) *widget.Entry {
 
 const testFingerprint = "AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99"
 
-// A certificate that can not be verified is only used after the user has agreed to it
+// An unverifiable certificate is only used after the user agrees
 func TestConfigWindowTrustCertificate(t *testing.T) {
 	newTestApp(t)
 	w := openConfigWindow(t)
@@ -290,7 +290,7 @@ func TestConfigWindowDeclineCertificate(t *testing.T) {
 	}
 }
 
-// The trusted certificate belongs to one server
+// The pin only applies to its server
 func TestConfigWindowPinOnlyForSameServer(t *testing.T) {
 	newTestApp(t)
 	w := openConfigWindow(t)

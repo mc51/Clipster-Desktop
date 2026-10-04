@@ -27,8 +27,7 @@ type Clips struct {
 
 // apiRequest sends a JSON request to the API endpoint and returns the response body.
 // If user is not empty, basic auth is used. Non 2xx/3xx status codes are returned as error.
-// Certificates are checked as described at verifyServerCert, pin is the fingerprint of the
-// certificate the user trusts (can be empty). A certificate that is not trusted is returned as *UntrustedCertError
+// pin is the trusted certificate fingerprint, see verifyServerCert
 func apiRequest(method string, url string, payload any, user string, hash_login string,
 	pin string) ([]byte, error) {
 	var reqBody io.Reader
@@ -59,7 +58,7 @@ func apiRequest(method string, url string, payload any, user string, hash_login 
 	if err != nil {
 		var certErr *UntrustedCertError
 		if errors.As(err, &certErr) {
-			return nil, certErr // without the url wrapped around it
+			return nil, certErr // unwrapped from url.Error
 		}
 		return nil, err
 	}

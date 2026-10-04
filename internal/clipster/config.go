@@ -41,9 +41,7 @@ type Config struct {
 	Username   string `toml:"username"`
 	Hash_login string `toml:"hash_login"`
 	Hash_msg   string `toml:"hash_msg"`
-	// SHA-256 fingerprint of the server certificate the user has chosen to trust,
-	// although it can not be verified (e.g. self signed). Empty if there is none.
-	// Replaces the former option disable_ssl_cert_check
+	// fingerprint of the trusted server certificate, replaces disable_ssl_cert_check
 	Pinned_cert string `toml:"pinned_cert"`
 }
 

@@ -106,8 +106,7 @@ func AreCredsComplete(host string, user string, pw string) (string, string, stri
 	return host, user, pw, err
 }
 
-// normalizeHost removes surrounding whitespace and trailing slashes from the entered
-// server address. If it is empty, the default server is returned
+// normalizeHost trims the address, empty means the default server
 func normalizeHost(host string) string {
 	host = strings.TrimRight(strings.TrimSpace(host), "/")
 	if host == "" {

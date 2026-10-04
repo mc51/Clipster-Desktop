@@ -12,8 +12,7 @@ import (
 	"testing"
 )
 
-// newTLSTestServer starts a HTTPS server with a self signed certificate, which is not
-// trusted. It counts the requests that reach the handler
+// newTLSTestServer starts an untrusted HTTPS server and counts its requests
 func newTLSTestServer(t *testing.T) (*httptest.Server, *atomic.Int32) {
 	t.Helper()
 	var requests atomic.Int32
@@ -144,8 +143,7 @@ func TestVerifyServerCert(t *testing.T) {
 	}
 }
 
-// Configs written by former versions still contain disable_ssl_cert_check. It must not
-// turn off any check and must not stop the config from loading
+// The old disable_ssl_cert_check must be ignored without breaking the load
 func TestLoadConfigFromFileLegacySSLOption(t *testing.T) {
 	oldPath := CONFIG_FILEPATH
 	CONFIG_FILEPATH = filepath.Join(t.TempDir(), CONFIG_FILENAME)
