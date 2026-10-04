@@ -92,13 +92,10 @@ func truncate(s string, n int) string {
 // AreCredsComplete checks if entered credentials are complete and hostname is valid
 func AreCredsComplete(host string, user string, pw string) (string, string, string, error) {
 	var err error = nil
-	host = strings.TrimRight(strings.TrimSpace(host), "/")
+	host = normalizeHost(host)
 	user = strings.TrimSpace(user)
 	pw = strings.TrimSpace(pw) // maybe space should be valid? but not at beginning or end?
 
-	if host == "" {
-		host = HOST_DEFAULT
-	}
 	if !isHostnameValid(host) {
 		err = errors.New("Please enter a valid hostname")
 	} else if user == "" {
@@ -107,6 +104,16 @@ func AreCredsComplete(host string, user string, pw string) (string, string, stri
 		err = errors.New("Please enter a password")
 	}
 	return host, user, pw, err
+}
+
+// normalizeHost removes surrounding whitespace and trailing slashes from the entered
+// server address. If it is empty, the default server is returned
+func normalizeHost(host string) string {
+	host = strings.TrimRight(strings.TrimSpace(host), "/")
+	if host == "" {
+		return HOST_DEFAULT
+	}
+	return host
 }
 
 // isHostnameValid checks that host is a usable server address. The credentials are sent
@@ -131,21 +138,21 @@ func isHostnameValid(host string) bool {
 // uses hash to authenticate against API endpoint. On success saves credentials to config.
 // Blocks on the network, so do not call it from the GUI goroutine.
 // Returns a message describing the result to be displayed to the user
-func login_flow(host string, user string, pw string, ssl_disable bool) (string, error) {
+func login_flow(host string, user string, pw string, pin string) (string, error) {
 	host, user, pw, err := AreCredsComplete(host, user, pw)
 	if err != nil {
 		log.Println("Error:", err)
 		return "", err
 	}
-	log.Println("Login: ssl check disabled:", ssl_disable)
+	log.Println("Login: certificate pinned:", pin != "")
 	debugf("Login: %s %s", host, user)
 
 	hash_login := GetLoginHashFromPw(user, pw)
-	if err := APILogin(host, user, hash_login, ssl_disable); err != nil {
+	if err := APILogin(host, user, hash_login, pin); err != nil {
 		log.Println("Error:", err)
 		return "", err
 	}
-	return saveCredentials(Config{host, user, hash_login, GetMsgHashFromPw(user, pw), ssl_disable},
+	return saveCredentials(Config{host, user, hash_login, GetMsgHashFromPw(user, pw), pin},
 		"Login successful")
 }
 
@@ -153,21 +160,21 @@ func login_flow(host string, user string, pw string, ssl_disable bool) (string, 
 // uses hash to register at API endpoint. On success saves credentials to config.
 // Blocks on the network, so do not call it from the GUI goroutine.
 // Returns a message describing the result to be displayed to the user
-func register_flow(host string, user string, pw string, ssl_disable bool) (string, error) {
+func register_flow(host string, user string, pw string, pin string) (string, error) {
 	host, user, pw, err := AreCredsComplete(host, user, pw)
 	if err != nil {
 		log.Println("Error:", err)
 		return "", err
 	}
-	log.Println("Registration: ssl check disabled:", ssl_disable)
+	log.Println("Registration: certificate pinned:", pin != "")
 	debugf("Registration: %s %s", host, user)
 
 	hash_login := GetLoginHashFromPw(user, pw)
-	if err := APIRegister(host, user, hash_login, ssl_disable); err != nil {
+	if err := APIRegister(host, user, hash_login, pin); err != nil {
 		log.Println("Error:", err)
 		return "", err
 	}
-	return saveCredentials(Config{host, user, hash_login, GetMsgHashFromPw(user, pw), ssl_disable},
+	return saveCredentials(Config{host, user, hash_login, GetMsgHashFromPw(user, pw), pin},
 		"Registration successful")
 }
 

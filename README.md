@@ -81,6 +81,10 @@ Clipster will add an Icon to your system tray which you can click for opening up
 `Autostart Clipster` will add it to auto start.  
 `Quit` will terminate the app.
 
+## Self-hosted servers and certificates
+
+For a server with a self-signed certificate, Clipster shows its fingerprint on login. Check it and click `Trust`; Clipster then only accepts exactly this certificate. If it changes, trust it again under `Edit Credentials`. The old option `No SSL certification check` is gone, so log in again to trust your server.
+
 ## Privacy
 
 Clips are encrypted on your device before they are sent, the server only stores encrypted data. Your password never leaves the device. See [PRIVACY.md](PRIVACY.md) for the data the server sees.

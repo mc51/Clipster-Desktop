@@ -37,11 +37,14 @@ const HASH_ITERS_MSG = 10000
 const HASH_LENGTH = 32
 
 type Config struct {
-	Server                 string `toml:"server"`
-	Username               string `toml:"username"`
-	Hash_login             string `toml:"hash_login"`
-	Hash_msg               string `toml:"hash_msg"`
-	Disable_ssl_cert_check bool   `toml:"disable_ssl_cert_check"`
+	Server     string `toml:"server"`
+	Username   string `toml:"username"`
+	Hash_login string `toml:"hash_login"`
+	Hash_msg   string `toml:"hash_msg"`
+	// SHA-256 fingerprint of the server certificate the user has chosen to trust,
+	// although it can not be verified (e.g. self signed). Empty if there is none.
+	// Replaces the former option disable_ssl_cert_check
+	Pinned_cert string `toml:"pinned_cert"`
 }
 
 var (
@@ -79,8 +82,13 @@ func LoadConfigFromFile() (Config, error) {
 	log.Println("Loading config file")
 	debugf("Config file is %s", CONFIG_FILEPATH)
 	var c Config
-	if _, err := toml.DecodeFile(CONFIG_FILEPATH, &c); err != nil {
+	md, err := toml.DecodeFile(CONFIG_FILEPATH, &c)
+	if err != nil {
 		return c, err
+	}
+	if md.IsDefined("disable_ssl_cert_check") {
+		log.Println("Warning: disable_ssl_cert_check in the config is no longer supported and ignored. " +
+			"A certificate that can not be verified must be trusted via Edit Credentials")
 	}
 	if c.Server == "" || c.Username == "" || c.Hash_login == "" || c.Hash_msg == "" {
 		return c, errors.New("config file is incomplete: " + CONFIG_FILEPATH)

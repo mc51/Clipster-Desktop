@@ -176,9 +176,9 @@ func TestConfigWindowLogin(t *testing.T) {
 	loginBtn, registerBtn := findButton(w.Content(), "Login"), findButton(w.Content(), "Register")
 	test.Type(findPasswordEntry(w.Content()), "secret")
 
-	loginFlow = func(host, user, pw string, noSSL bool) (string, error) {
-		if host != "https://example.com" || user != "bob" || pw != "secret" || noSSL {
-			t.Errorf("login with %q %q %q %v", host, user, pw, noSSL)
+	loginFlow = func(host, user, pw, pin string) (string, error) {
+		if host != "https://example.com" || user != "bob" || pw != "secret" || pin != "" {
+			t.Errorf("login with %q %q %q %q", host, user, pw, pin)
 		}
 		if !loginBtn.Disabled() || !registerBtn.Disabled() {
 			t.Error("buttons must be disabled while logging in")
@@ -200,12 +200,125 @@ func TestConfigWindowLogin(t *testing.T) {
 	}
 }
 
+// findServerEntry returns the entry for the server address somewhere below obj
+func findServerEntry(obj fyne.CanvasObject) *widget.Entry {
+	var found *widget.Entry
+	walk(obj, func(o fyne.CanvasObject) bool {
+		if e, ok := o.(*widget.Entry); ok && e.PlaceHolder == HOST_DEFAULT {
+			found = e
+		}
+		return found == nil
+	})
+	return found
+}
+
+const testFingerprint = "AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99"
+
+// A certificate that can not be verified is only used after the user has agreed to it
+func TestConfigWindowTrustCertificate(t *testing.T) {
+	newTestApp(t)
+	w := openConfigWindow(t)
+	test.Type(findPasswordEntry(w.Content()), "secret")
+
+	var pins []string
+	loginFlow = func(host, user, pw, pin string) (string, error) {
+		pins = append(pins, pin)
+		if pin != testFingerprint {
+			return "", &UntrustedCertError{Host: "example.com", Fingerprint: testFingerprint,
+				Reason: errors.New("x509: certificate signed by unknown authority")}
+		}
+		return "Login successful", nil
+	}
+	test.Tap(findButton(w.Content(), "Login"))
+
+	confirm := w.Canvas().Overlays().Top()
+	if confirm == nil || findButton(confirm, "Trust") == nil || findButton(confirm, "Cancel") == nil {
+		t.Fatal("an untrusted certificate should show a dialog to trust it")
+	}
+	if len(pins) != 1 || pins[0] != "" {
+		t.Fatalf("flow ran with pins %q, want it to run once without pin", pins)
+	}
+	if loginBtn := findButton(w.Content(), "Login"); loginBtn.Disabled() {
+		t.Error("buttons must be enabled while the user decides")
+	}
+	if w.Canvas().Capture() == nil {
+		t.Error("dialog can not be rendered")
+	}
+
+	test.Tap(findButton(confirm, "Trust"))
+	if len(pins) != 2 || pins[1] != testFingerprint {
+		t.Fatalf("flow ran with pins %q, want a second run with the trusted fingerprint", pins)
+	}
+	info := w.Canvas().Overlays().Top()
+	if info == nil || findButton(info, "OK") == nil {
+		t.Error("login after trusting the certificate should show the info dialog")
+	}
+}
+
+func TestConfigWindowDeclineCertificate(t *testing.T) {
+	newTestApp(t)
+	w := openConfigWindow(t)
+	test.Type(findPasswordEntry(w.Content()), "secret")
+
+	runs := 0
+	loginFlow = func(host, user, pw, pin string) (string, error) {
+		runs++
+		return "", &UntrustedCertError{Host: "example.com", Fingerprint: testFingerprint,
+			Pinned: "00:11", Reason: errors.New("x509: certificate signed by unknown authority")}
+	}
+	test.Tap(findButton(w.Content(), "Login"))
+	confirm := w.Canvas().Overlays().Top()
+	if confirm == nil {
+		t.Fatal("a changed certificate should show a dialog")
+	}
+	if w.Canvas().Capture() == nil {
+		t.Error("dialog can not be rendered")
+	}
+	test.Tap(findButton(confirm, "Cancel"))
+
+	if runs != 1 {
+		t.Errorf("flow ran %d times, want 1 as the certificate was not trusted", runs)
+	}
+	if top := w.Canvas().Overlays().Top(); top != nil {
+		t.Error("declining should close the dialog and leave the window as it is")
+	}
+	if configWin != w {
+		t.Error("config window should stay open")
+	}
+	if findButton(w.Content(), "Login").Disabled() || findButton(w.Content(), "Register").Disabled() {
+		t.Error("buttons must be enabled after declining")
+	}
+}
+
+// The trusted certificate belongs to one server
+func TestConfigWindowPinOnlyForSameServer(t *testing.T) {
+	newTestApp(t)
+	w := openConfigWindow(t)
+	setConf(Config{Server: "https://example.com", Username: "bob", Pinned_cert: testFingerprint})
+	test.Type(findPasswordEntry(w.Content()), "secret")
+
+	var pins []string
+	loginFlow = func(host, user, pw, pin string) (string, error) {
+		pins = append(pins, pin)
+		return "Login successful", nil
+	}
+
+	test.Tap(findButton(w.Content(), "Login"))
+	w.Canvas().Overlays().Remove(w.Canvas().Overlays().Top())
+	test.Type(findServerEntry(w.Content()), "https://other.example")
+	test.Tap(findButton(w.Content(), "Login"))
+
+	if len(pins) != 2 || pins[0] != testFingerprint || pins[1] != "" {
+		t.Errorf("flow ran with pins %q, want the pin only for the saved server", pins)
+	}
+}
+
 func TestConfigWindowRegisterError(t *testing.T) {
 	newTestApp(t)
 	w := openConfigWindow(t)
 	loginBtn, registerBtn := findButton(w.Content(), "Login"), findButton(w.Content(), "Register")
 
-	registerFlow = func(string, string, string, bool) (string, error) {
+	registerFlow = func(string, string, string, string) (string, error) {
 		return "", errors.New("registration failed: user exists")
 	}
 	test.Tap(registerBtn)
@@ -237,7 +350,7 @@ func TestConfigWindowClosedDuringRequest(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			newTestApp(t)
 			w := openConfigWindow(t)
-			loginFlow = func(string, string, string, bool) (string, error) {
+			loginFlow = func(string, string, string, string) (string, error) {
 				w.Close()
 				return tt.msg, tt.err
 			}

@@ -3,6 +3,7 @@ package clipster
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"math"
 	"runtime"
@@ -36,10 +37,13 @@ var (
 	configWin fyne.Window
 
 	// The config window talks to the server via these. Tests replace them
-	loginFlow       = login_flow
-	registerFlow    = register_flow
-	runInBackground = func(f func()) { go f() }
+	loginFlow       flowFunc = login_flow
+	registerFlow    flowFunc = register_flow
+	runInBackground          = func(f func()) { go f() }
 )
+
+// flowFunc is a login or registration. pin is the fingerprint of the certificate to trust
+type flowFunc func(host, user, pw, pin string) (string, error)
 
 // sanitizeNotification makes text safe to hand to Fyne's notifications.
 // On Windows Fyne pastes the text into a double quoted PowerShell string. Without this,
@@ -79,6 +83,79 @@ func showError(w fyne.Window, err error) {
 	dialog.ShowError(err, w)
 }
 
+// fingerprintLines puts a fingerprint on two lines, so that it fits into a dialog
+func fingerprintLines(fp string) string {
+	parts := strings.Split(fp, ":")
+	if len(parts) < 2 {
+		return fp
+	}
+	half := len(parts) / 2
+	return strings.Join(parts[:half], ":") + "\n" + strings.Join(parts[half:], ":")
+}
+
+// wrapLines breaks the paragraphs of text into lines of at most width characters
+// (longer words stay as they are). Dialogs can not wrap text reliably, as they are as high as the window
+func wrapLines(text string, width int) string {
+	var lines []string
+	for _, para := range strings.Split(text, "\n") {
+		line := ""
+		for _, word := range strings.Fields(para) {
+			if line != "" && len([]rune(line))+1+len([]rune(word)) > width {
+				lines = append(lines, line)
+				line = ""
+			}
+			if line != "" {
+				line += " "
+			}
+			line += word
+		}
+		lines = append(lines, line)
+	}
+	return strings.Join(lines, "\n")
+}
+
+// confirmCert asks the user whether to trust the certificate of certErr. trust is called if they do.
+// Must be called on the main goroutine
+func confirmCert(w fyne.Window, certErr *UntrustedCertError, trust func()) {
+	const lineWidth = 56
+	var title, text string
+	var objs []fyne.CanvasObject
+	addText := func(text string, style fyne.TextStyle) {
+		objs = append(objs, widget.NewLabelWithStyle(text, fyne.TextAlignLeading, style))
+	}
+	if certErr.Pinned == "" {
+		title = "Clipster - Untrusted certificate"
+		text = fmt.Sprintf("The certificate of %s can not be verified:\n%v\n\n"+
+			"Only trust it if this is your own server and the fingerprint is the one of its certificate. "+
+			"Clipster will then only connect if the server presents exactly this certificate.",
+			certErr.Host, certErr.Reason)
+		addText(wrapLines(text, lineWidth), fyne.TextStyle{})
+		addText("SHA-256 fingerprint:", fyne.TextStyle{Bold: true})
+		addText(fingerprintLines(certErr.Fingerprint), fyne.TextStyle{Monospace: true})
+	} else {
+		title = "Clipster - Certificate changed"
+		text = fmt.Sprintf("WARNING: The certificate of %s is not the one you trusted before. "+
+			"This can be an attack. Only trust it if you know that the certificate of the server was replaced.",
+			certErr.Host)
+		addText(wrapLines(text, lineWidth), fyne.TextStyle{})
+		addText("Trusted before:", fyne.TextStyle{Bold: true})
+		addText(fingerprintLines(certErr.Pinned), fyne.TextStyle{Monospace: true})
+		addText("Now presented:", fyne.TextStyle{Bold: true})
+		addText(fingerprintLines(certErr.Fingerprint), fyne.TextStyle{Monospace: true})
+	}
+	d := dialog.NewCustomConfirm(title, "Trust", "Cancel", container.NewVBox(objs...), func(ok bool) {
+		if ok {
+			trust()
+		}
+	}, w)
+	d.Show()
+	// A dialog can not be larger than its window, which is small. Make room for all of it
+	need := d.MinSize().AddWidthHeight(40, 40)
+	cur := w.Canvas().Size()
+	w.Resize(fyne.NewSize(max(cur.Width, need.Width), max(cur.Height, need.Height)))
+	d.Resize(d.MinSize())
+}
+
 // GUI_ConfigWindow displays the window for editing the configuration.
 // Must be called on the main goroutine
 func GUI_ConfigWindow() {
@@ -102,24 +179,23 @@ func GUI_ConfigWindow() {
 	user := widget.NewEntry()
 	user.SetText(c.Username)
 	password := widget.NewPasswordEntry()
-	noSSLCheck := widget.NewCheck("", nil)
-	noSSLCheck.SetChecked(c.Disable_ssl_cert_check)
 
 	form := widget.NewForm(
 		widget.NewFormItem("Server address:", server),
-		widget.NewFormItem("No SSL certification check:", noSSLCheck),
 		widget.NewFormItem("Username:", user),
 		widget.NewFormItem("Password:", password),
 	)
 
 	var loginBtn, registerBtn *widget.Button
-	// run executes flow in the background so that the GUI does not block on the network
-	run := func(flow func(string, string, string, bool) (string, error)) {
-		host, name, pw, noSSL := server.Text, user.Text, password.Text, noSSLCheck.Checked
+	// start executes flow in the background so that the GUI does not block on the network.
+	// pin is the fingerprint of the certificate to trust. If the server presents another
+	// certificate that can not be verified, the user is asked whether to trust it and flow is started again
+	var start func(flow flowFunc, host, name, pw, pin string)
+	start = func(flow flowFunc, host, name, pw, pin string) {
 		loginBtn.Disable()
 		registerBtn.Disable()
 		runInBackground(func() {
-			msg, err := flow(host, name, pw, noSSL)
+			msg, err := flow(host, name, pw, pin)
 			fyne.Do(func() {
 				if configWin != w { // closed while the request was running, so there is no window for a dialog
 					if err != nil {
@@ -131,6 +207,11 @@ func GUI_ConfigWindow() {
 				}
 				loginBtn.Enable()
 				registerBtn.Enable()
+				var certErr *UntrustedCertError
+				if errors.As(err, &certErr) {
+					confirmCert(w, certErr, func() { start(flow, host, name, pw, certErr.Fingerprint) })
+					return
+				}
 				if err != nil {
 					showError(w, err)
 					return
@@ -140,6 +221,15 @@ func GUI_ConfigWindow() {
 				d.Show()
 			})
 		})
+	}
+	// run starts flow with the certificate trusted so far. It only applies to the
+	// server it was trusted for, so it is dropped when the address was changed
+	run := func(flow flowFunc) {
+		pin := ""
+		if cur := getConf(); normalizeHost(server.Text) == cur.Server {
+			pin = cur.Pinned_cert
+		}
+		start(flow, server.Text, user.Text, password.Text, pin)
 	}
 	loginBtn = widget.NewButton("Login", func() { run(loginFlow) })
 	registerBtn = widget.NewButton("Register", func() { run(registerFlow) })
