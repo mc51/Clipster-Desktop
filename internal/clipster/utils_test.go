@@ -57,7 +57,7 @@ func TestSaveCredentials(t *testing.T) {
 	})
 
 	c := Config{"https://example.com", "alice", GetLoginHashFromPw("alice", "secret"),
-		GetMsgHashFromPw("alice", "secret"), false}
+		GetMsgHashFromPw("alice", "secret"), ""}
 	var wg sync.WaitGroup
 	for range 4 {
 		wg.Go(func() {
@@ -100,7 +100,7 @@ func TestWriteConfigFileOverwrites(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	want := Config{"https://b.example", "b", "l2", "m2", true}
+	want := Config{"https://b.example", "b", "l2", "m2", "AB:CD"}
 	if err := WriteConfigFile(want); err != nil {
 		t.Fatal(err)
 	}

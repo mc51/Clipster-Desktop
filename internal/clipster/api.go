@@ -3,9 +3,9 @@ package clipster
 
 import (
 	"bytes"
-	"crypto/tls"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -26,9 +26,11 @@ type Clips struct {
 }
 
 // apiRequest sends a JSON request to the API endpoint and returns the response body.
-// If user is not empty, basic auth is used. Non 2xx/3xx status codes are returned as error
+// If user is not empty, basic auth is used. Non 2xx/3xx status codes are returned as error.
+// Certificates are checked as described at verifyServerCert, pin is the fingerprint of the
+// certificate the user trusts (can be empty). A certificate that is not trusted is returned as *UntrustedCertError
 func apiRequest(method string, url string, payload any, user string, hash_login string,
-	ssl_disable bool) ([]byte, error) {
+	pin string) ([]byte, error) {
 	var reqBody io.Reader
 	if payload != nil {
 		b, err := json.Marshal(payload)
@@ -51,10 +53,14 @@ func apiRequest(method string, url string, payload any, user string, hash_login 
 	}
 
 	tr := http.DefaultTransport.(*http.Transport).Clone()
-	tr.TLSClientConfig = &tls.Config{InsecureSkipVerify: ssl_disable}
+	tr.TLSClientConfig = newTLSConfig(req.URL.Hostname(), pin)
 	client := http.Client{Timeout: API_REQ_TIMEOUT * time.Second, Transport: tr}
 	resp, err := client.Do(req)
 	if err != nil {
+		var certErr *UntrustedCertError
+		if errors.As(err, &certErr) {
+			return nil, certErr // without the url wrapped around it
+		}
 		return nil, err
 	}
 	defer resp.Body.Close()
@@ -82,10 +88,10 @@ func APIShareClip(clip string, format string) error {
 	}
 	c := getConf()
 	_, err := apiRequest(http.MethodPost, c.Server+API_URI_COPY_PASTE, payload,
-		c.Username, c.Hash_login, c.Disable_ssl_cert_check)
+		c.Username, c.Hash_login, c.Pinned_cert)
 	if err != nil {
 		log.Println("Error: sharing clip failed", err)
-		return errors.New("sharing clip failed: " + err.Error())
+		return fmt.Errorf("sharing clip failed: %w", err)
 	}
 	log.Println("Ok: sharing clip successful")
 	return nil
@@ -96,10 +102,10 @@ func APIDownloadAllClips() ([]Clips, error) {
 	var clips []Clips
 	c := getConf()
 	body, err := apiRequest(http.MethodGet, c.Server+API_URI_COPY_PASTE, nil,
-		c.Username, c.Hash_login, c.Disable_ssl_cert_check)
+		c.Username, c.Hash_login, c.Pinned_cert)
 	if err != nil {
 		log.Println("Error: download Clips", err)
-		return nil, errors.New("download Clips failed: " + err.Error())
+		return nil, fmt.Errorf("download Clips failed: %w", err)
 	}
 	if err := json.Unmarshal(body, &clips); err != nil {
 		log.Println("Error:", err)
@@ -110,24 +116,24 @@ func APIDownloadAllClips() ([]Clips, error) {
 }
 
 // APIRegister registers new account at API endpoint using hash created from creds
-func APIRegister(host string, user string, hash_login string, ssl_disable bool) error {
+func APIRegister(host string, user string, hash_login string, pin string) error {
 	payload := map[string]string{
 		"username": user,
 		"password": hash_login,
 	}
 	if _, err := apiRequest(http.MethodPost, host+API_URI_REGISTER, payload, "", "",
-		ssl_disable); err != nil {
-		return errors.New("registration failed: " + err.Error())
+		pin); err != nil {
+		return fmt.Errorf("registration failed: %w", err)
 	}
 	log.Println("Ok: registration successful")
 	return nil
 }
 
 // APILogin authenticates against API endpoint using hash created from creds
-func APILogin(host string, user string, hash_login string, ssl_disable bool) error {
+func APILogin(host string, user string, hash_login string, pin string) error {
 	if _, err := apiRequest(http.MethodGet, host+API_URI_LOGIN, nil, user, hash_login,
-		ssl_disable); err != nil {
-		return errors.New("login failed: " + err.Error())
+		pin); err != nil {
+		return fmt.Errorf("login failed: %w", err)
 	}
 	log.Println("Ok: logged in")
 	return nil
